@@ -2,9 +2,9 @@
  * Source: https://github.com/openai/openai-apps-sdk-examples/tree/main/src
  */
 
-import { useCallback, useEffect, useState, type SetStateAction } from "react";
-import { useOpenAIGlobal } from "./use-openai-global";
+import { type SetStateAction, useCallback, useEffect, useState } from "react";
 import type { UnknownObject } from "./types";
+import { useOpenAIGlobal } from "./use-openai-global";
 
 export function useWidgetState<T extends UnknownObject>(
   defaultState: T | (() => T)
@@ -17,19 +17,19 @@ export function useWidgetState<T extends UnknownObject>(
 /**
  * Hook to manage widget state that persists across widget lifecycles.
  * State is synchronized with the ChatGPT parent window and survives widget minimize/restore.
- * 
+ *
  * @param defaultState - Initial state value or function to compute it
  * @returns A tuple of [state, setState] similar to useState, with bidirectional sync to ChatGPT
- * 
+ *
  * @example
  * ```tsx
  * interface MyState {
  *   count: number;
  *   user: string;
  * }
- * 
+ *
  * const [state, setState] = useWidgetState<MyState>({ count: 0, user: "guest" });
- * 
+ *
  * const increment = () => {
  *   setState(prev => ({ ...prev, count: prev.count + 1 }));
  * };
@@ -46,7 +46,7 @@ export function useWidgetState<T extends UnknownObject>(
     }
     return typeof defaultState === "function"
       ? defaultState()
-      : defaultState ?? null;
+      : (defaultState ?? null);
   });
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { CDPReactProvider } from "@coinbase/cdp-react";
-import { ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 export function CDPProvider({ children }: { children: ReactNode }) {
   const [isInIframe, setIsInIframe] = useState(false);
@@ -12,7 +12,9 @@ export function CDPProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Get project ID from environment variable
-  const projectId = process.env.NEXT_PUBLIC_CDP_PROJECT_ID || "146d7f40-dc10-49df-8773-b5ee5693d765";
+  const projectId =
+    process.env.NEXT_PUBLIC_CDP_PROJECT_ID ||
+    "146d7f40-dc10-49df-8773-b5ee5693d765";
 
   // CDP requires domain whitelisting, which doesn't work in ChatGPT's dynamic sandbox domains
   // Only wrap with CDP provider when not in iframe (direct access)
@@ -39,4 +41,3 @@ export function CDPProvider({ children }: { children: ReactNode }) {
     </CDPReactProvider>
   );
 }
-

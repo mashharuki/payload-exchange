@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -12,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import {
   Table,
   TableBody,
@@ -21,14 +29,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -89,15 +89,22 @@ export default function MarketPage() {
   const [budget, setBudget] = useState(100);
   const [sortBy, setSortBy] = useState("reach");
   const [networkFilter, setNetworkFilter] = useState("all");
-  const [currentOpportunities, setCurrentOpportunities] = useState<Opportunity[]>([]);
-  const [filteredOpportunities, setFilteredOpportunities] = useState<Opportunity[]>([]);
-  const [currentView, setCurrentView] = useState<"table" | "grid" | "chart">("table");
+  const [currentOpportunities, setCurrentOpportunities] = useState<
+    Opportunity[]
+  >([]);
+  const [filteredOpportunities, setFilteredOpportunities] = useState<
+    Opportunity[]
+  >([]);
+  const [currentView, setCurrentView] = useState<"table" | "grid" | "chart">(
+    "table"
+  );
   const [currentFilters, setCurrentFilters] = useState<string[]>(["all"]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusText, setStatusText] = useState("Loading resources...");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
-  const [currentTestResource, setCurrentTestResource] = useState<Resource | null>(null);
+  const [currentTestResource, setCurrentTestResource] =
+    useState<Resource | null>(null);
   const [testMethod, setTestMethod] = useState("GET");
   const [testHeaders, setTestHeaders] = useState("{}");
   const [testBody, setTestBody] = useState("{}");
@@ -132,9 +139,7 @@ export default function MarketPage() {
   };
 
   // Convert smallest unit to USD (assuming USDC with 6 decimals)
-  const toUSD = (amount: string) => {
-    return parseInt(amount) / 1000000;
-  };
+  const toUSD = (amount: string) => Number.parseInt(amount) / 1_000_000;
 
   // Calculate market quality score (0-1)
   const calculateMarketQualityScore = (
@@ -181,7 +186,8 @@ export default function MarketPage() {
     }
 
     const monthlyActivity =
-      analytics?.transactionsMonth || (analytics?.averageDailyTransactions || 0) * 30;
+      analytics?.transactionsMonth ||
+      (analytics?.averageDailyTransactions || 0) * 30;
     const activityBasedReach = Math.floor(monthlyActivity * 3);
     const qualityMultiplier = 0.3 + marketQuality * 0.7;
 
@@ -201,7 +207,8 @@ export default function MarketPage() {
     marketQuality: number
   ): number => {
     const monthlyActivity =
-      analytics?.transactionsMonth || (analytics?.averageDailyTransactions || 0) * 30;
+      analytics?.transactionsMonth ||
+      (analytics?.averageDailyTransactions || 0) * 30;
     const monthsToCover = 1 + marketQuality * 2;
     const recommendedTx = Math.floor(monthlyActivity * monthsToCover);
     const recommendedBudget = recommendedTx * costPerTx;
@@ -213,14 +220,16 @@ export default function MarketPage() {
   const analyzeMarket = useCallback(
     (budget: number, networkFilter: string): Opportunity[] => {
       const opportunities: Opportunity[] = [];
-      const MIN_COST_THRESHOLD = 0.00001;
+      const MIN_COST_THRESHOLD = 0.000_01;
 
       resourcesData.forEach((resource) => {
         if (
-          !resource ||
-          !resource.metadata?.paymentAnalytics ||
-          !resource.accepts ||
-          !Array.isArray(resource.accepts)
+          !(
+            resource &&
+            resource.metadata?.paymentAnalytics &&
+            resource.accepts &&
+            Array.isArray(resource.accepts)
+          )
         ) {
           return;
         }
@@ -239,9 +248,13 @@ export default function MarketPage() {
 
             if (budget >= maxAmount && maxAmount > 0) {
               const analytics = resource.metadata!.paymentAnalytics!;
-              const confidenceScore = resource.metadata?.confidence?.overallScore || 0;
+              const confidenceScore =
+                resource.metadata?.confidence?.overallScore || 0;
 
-              const marketQuality = calculateMarketQualityScore(analytics, confidenceScore);
+              const marketQuality = calculateMarketQualityScore(
+                analytics,
+                confidenceScore
+              );
               const realisticReach = calculateRealisticReach(
                 budget,
                 maxAmount,
@@ -257,11 +270,13 @@ export default function MarketPage() {
 
               opportunities.push({
                 resource: resource.resource || "Unknown",
-                description: accept.description || resource.metadata?.description || "",
+                description:
+                  accept.description || resource.metadata?.description || "",
                 maxAmountRequired: maxAmount,
                 totalTransactions: analytics.totalTransactions || 0,
                 totalUniqueUsers: analytics.totalUniqueUsers || 0,
-                averageDailyTransactions: analytics.averageDailyTransactions || 0,
+                averageDailyTransactions:
+                  analytics.averageDailyTransactions || 0,
                 transactionsMonth: analytics.transactionsMonth || 0,
                 potentialReach: realisticReach,
                 theoreticalReach: Math.floor(budget / maxAmount),
@@ -319,82 +334,98 @@ export default function MarketPage() {
   );
 
   // Estimate unique users accounting for overlap
-  const estimateUniqueUsers = useCallback((opportunities: Opportunity[]): number => {
-    if (opportunities.length === 0) return 0;
-    if (opportunities.length === 1) return opportunities[0].totalUniqueUsers;
+  const estimateUniqueUsers = useCallback(
+    (opportunities: Opportunity[]): number => {
+      if (opportunities.length === 0) return 0;
+      if (opportunities.length === 1) return opportunities[0].totalUniqueUsers;
 
-    const networkGroups: Record<string, Opportunity[]> = {};
-    opportunities.forEach((opp) => {
-      if (!networkGroups[opp.network]) {
-        networkGroups[opp.network] = [];
-      }
-      networkGroups[opp.network].push(opp);
-    });
+      const networkGroups: Record<string, Opportunity[]> = {};
+      opportunities.forEach((opp) => {
+        if (!networkGroups[opp.network]) {
+          networkGroups[opp.network] = [];
+        }
+        networkGroups[opp.network].push(opp);
+      });
 
-    let estimatedUniqueUsers = 0;
+      let estimatedUniqueUsers = 0;
 
-    Object.keys(networkGroups).forEach((network) => {
-      const group = networkGroups[network];
+      Object.keys(networkGroups).forEach((network) => {
+        const group = networkGroups[network];
 
-      if (group.length === 1) {
-        estimatedUniqueUsers += group[0].totalUniqueUsers;
-        return;
-      }
+        if (group.length === 1) {
+          estimatedUniqueUsers += group[0].totalUniqueUsers;
+          return;
+        }
 
-      const sorted = [...group].sort(
-        (a, b) => b.totalUniqueUsers - a.totalUniqueUsers
-      );
-
-      let uniqueUsers = sorted[0].totalUniqueUsers;
-
-      for (let i = 1; i < sorted.length; i++) {
-        const current = sorted[i];
-        const previous = sorted[i - 1];
-
-        const transactionRatio = Math.min(
-          current.totalTransactions / (previous.totalTransactions + 1),
-          previous.totalTransactions / (current.totalTransactions + 1)
+        const sorted = [...group].sort(
+          (a, b) => b.totalUniqueUsers - a.totalUniqueUsers
         );
 
-        const userBaseRatio = Math.min(
-          current.totalUniqueUsers / (previous.totalUniqueUsers + 1),
-          previous.totalUniqueUsers / (current.totalUniqueUsers + 1)
+        let uniqueUsers = sorted[0].totalUniqueUsers;
+
+        for (let i = 1; i < sorted.length; i++) {
+          const current = sorted[i];
+          const previous = sorted[i - 1];
+
+          const transactionRatio = Math.min(
+            current.totalTransactions / (previous.totalTransactions + 1),
+            previous.totalTransactions / (current.totalTransactions + 1)
+          );
+
+          const userBaseRatio = Math.min(
+            current.totalUniqueUsers / (previous.totalUniqueUsers + 1),
+            previous.totalUniqueUsers / (current.totalUniqueUsers + 1)
+          );
+
+          const overlapFactor =
+            transactionRatio * 0.4 +
+            userBaseRatio * 0.3 +
+            Math.min(current.marketQuality, previous.marketQuality) * 0.3;
+
+          const estimatedOverlap =
+            current.totalUniqueUsers * overlapFactor * 0.3;
+          const newUniqueUsers = Math.max(
+            0,
+            current.totalUniqueUsers - estimatedOverlap
+          );
+
+          uniqueUsers += newUniqueUsers;
+        }
+
+        estimatedUniqueUsers += uniqueUsers;
+      });
+
+      const networkCount = Object.keys(networkGroups).length;
+      if (networkCount > 1) {
+        const crossNetworkOverlapFactor = Math.min(
+          0.15,
+          0.05 + (networkCount - 2) * 0.02
         );
-
-        const overlapFactor =
-          transactionRatio * 0.4 +
-          userBaseRatio * 0.3 +
-          Math.min(current.marketQuality, previous.marketQuality) * 0.3;
-
-        const estimatedOverlap = current.totalUniqueUsers * overlapFactor * 0.3;
-        const newUniqueUsers = Math.max(0, current.totalUniqueUsers - estimatedOverlap);
-
-        uniqueUsers += newUniqueUsers;
+        estimatedUniqueUsers =
+          estimatedUniqueUsers * (1 - crossNetworkOverlapFactor);
       }
 
-      estimatedUniqueUsers += uniqueUsers;
-    });
-
-    const networkCount = Object.keys(networkGroups).length;
-    if (networkCount > 1) {
-      const crossNetworkOverlapFactor = Math.min(0.15, 0.05 + (networkCount - 2) * 0.02);
-      estimatedUniqueUsers = estimatedUniqueUsers * (1 - crossNetworkOverlapFactor);
-    }
-
-    return Math.round(estimatedUniqueUsers);
-  }, []);
+      return Math.round(estimatedUniqueUsers);
+    },
+    []
+  );
 
   // Calculate metrics
   const calculateMetrics = useCallback(
     (budget: number, opportunities: Opportunity[]) => {
-      const totalReach = opportunities.reduce((sum, opp) => sum + opp.potentialReach, 0);
+      const totalReach = opportunities.reduce(
+        (sum, opp) => sum + opp.potentialReach,
+        0
+      );
       const estimatedUniqueUsers = estimateUniqueUsers(opportunities);
       const naiveTotalUsers = opportunities.reduce(
         (sum, opp) => sum + opp.totalUniqueUsers,
         0
       );
       const reachPerUser =
-        estimatedUniqueUsers > 0 ? (totalReach / estimatedUniqueUsers).toFixed(1) : "0";
+        estimatedUniqueUsers > 0
+          ? (totalReach / estimatedUniqueUsers).toFixed(1)
+          : "0";
 
       return {
         totalReach,
@@ -416,7 +447,7 @@ export default function MarketPage() {
         return;
       }
 
-      if (!resourcesLoaded || !resourcesData || resourcesData.length === 0) {
+      if (!(resourcesLoaded && resourcesData) || resourcesData.length === 0) {
         return;
       }
 
@@ -435,7 +466,15 @@ export default function MarketPage() {
         }
       }, 300);
     },
-    [budget, networkFilter, sortBy, resourcesLoaded, resourcesData, analyzeMarket, sortOpportunities]
+    [
+      budget,
+      networkFilter,
+      sortBy,
+      resourcesLoaded,
+      resourcesData,
+      analyzeMarket,
+      sortOpportunities,
+    ]
   );
 
   // Apply filters and search
@@ -452,10 +491,14 @@ export default function MarketPage() {
     // Apply filters
     if (!currentFilters.includes("all")) {
       filtered = filtered.filter((opp) => {
-        if (currentFilters.includes("high-quality") && opp.marketQuality < 0.7) return false;
-        if (currentFilters.includes("high-reach") && opp.potentialReach < 1000) return false;
-        if (currentFilters.includes("low-cost") && opp.maxAmountRequired > 0.01) return false;
-        if (currentFilters.includes("high-users") && opp.totalUniqueUsers < 10) return false;
+        if (currentFilters.includes("high-quality") && opp.marketQuality < 0.7)
+          return false;
+        if (currentFilters.includes("high-reach") && opp.potentialReach < 1000)
+          return false;
+        if (currentFilters.includes("low-cost") && opp.maxAmountRequired > 0.01)
+          return false;
+        if (currentFilters.includes("high-users") && opp.totalUniqueUsers < 10)
+          return false;
         return true;
       });
     }
@@ -481,9 +524,8 @@ export default function MarketPage() {
         if (newFilters.includes(filter)) {
           const filtered = newFilters.filter((f) => f !== filter);
           return filtered.length === 0 ? ["all"] : filtered;
-        } else {
-          return [...newFilters, filter];
         }
+        return [...newFilters, filter];
       });
     }
   };
@@ -505,7 +547,9 @@ export default function MarketPage() {
     };
 
     if (fullResource.metadata?.outputSchema?.input?.headerFields) {
-      Object.keys(fullResource.metadata.outputSchema.input.headerFields).forEach((key) => {
+      Object.keys(
+        fullResource.metadata.outputSchema.input.headerFields
+      ).forEach((key) => {
         if (key !== "X-PAYMENT") {
           defaultHeaders[key] = "";
         }
@@ -659,8 +703,12 @@ export default function MarketPage() {
 
       ctx.clearRect(0, 0, width, height);
 
-      const maxCost = Math.max(...filteredOpportunities.map((o) => o.maxAmountRequired));
-      const maxReach = Math.max(...filteredOpportunities.map((o) => o.potentialReach));
+      const maxCost = Math.max(
+        ...filteredOpportunities.map((o) => o.maxAmountRequired)
+      );
+      const maxReach = Math.max(
+        ...filteredOpportunities.map((o) => o.potentialReach)
+      );
 
       ctx.strokeStyle = "#dadde1";
       ctx.lineWidth = 1;
@@ -672,7 +720,8 @@ export default function MarketPage() {
 
       filteredOpportunities.slice(0, 100).forEach((opp) => {
         const x = padding + (opp.maxAmountRequired / maxCost) * chartWidth;
-        const y = height - padding - (opp.potentialReach / maxReach) * chartHeight;
+        const y =
+          height - padding - (opp.potentialReach / maxReach) * chartHeight;
 
         ctx.fillStyle = `rgba(24, 119, 242, ${0.3 + opp.marketQuality * 0.5})`;
         ctx.beginPath();
@@ -694,54 +743,62 @@ export default function MarketPage() {
   }, [currentView, filteredOpportunities]);
 
   const opportunityData = currentTestResource
-    ? filteredOpportunities.find((opp) => opp.resource === currentTestResource.resource)
+    ? filteredOpportunities.find(
+        (opp) => opp.resource === currentTestResource.resource
+      )
     : null;
   const accept = currentTestResource?.accepts?.[0];
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] text-[#1c1e21] font-sans">
+    <div className="min-h-screen bg-[#f0f2f5] font-sans text-[#1c1e21]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-[#dadde1] shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-4 h-14 flex items-center">
-          <h1 className="text-xl font-semibold text-[#1c1e21]">Resource Monetization Platform</h1>
+      <header className="sticky top-0 z-50 border-[#dadde1] border-b bg-white shadow-sm">
+        <div className="mx-auto flex h-14 max-w-[1600px] items-center px-4">
+          <h1 className="font-semibold text-[#1c1e21] text-xl">
+            Resource Monetization Platform
+          </h1>
         </div>
       </header>
 
       {/* Main Container */}
-      <div className="max-w-[1600px] mx-auto flex gap-0 min-h-[calc(100vh-56px)] bg-[#f0f2f5]">
+      <div className="mx-auto flex min-h-[calc(100vh-56px)] max-w-[1600px] gap-0 bg-[#f0f2f5]">
         {/* Sidebar */}
-        <aside className="w-80 flex-shrink-0 bg-white border-r border-[#dadde1] p-4 h-fit">
+        <aside className="h-fit w-80 flex-shrink-0 border-[#dadde1] border-r bg-white p-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base font-semibold pb-3 border-b border-[#dadde1]">
+              <CardTitle className="border-[#dadde1] border-b pb-3 font-semibold text-base">
                 Campaign Setup
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleAnalyze} className="space-y-5">
+              <form className="space-y-5" onSubmit={handleAnalyze}>
                 <div className="space-y-2">
                   <Label htmlFor="budget">Budget Amount</Label>
                   <div className="flex items-center gap-3">
                     <Slider
-                      value={[budget]}
-                      onValueChange={(value) => setBudget(value[0])}
-                      min={1}
-                      max={10000}
-                      step={1}
                       className="flex-1"
+                      max={10_000}
+                      min={1}
+                      onValueChange={(value) => setBudget(value[0])}
+                      step={1}
+                      value={[budget]}
                     />
                     <Input
-                      type="number"
-                      id="budget"
-                      value={budget}
-                      onChange={(e) => setBudget(parseFloat(e.target.value) || 0)}
-                      min={0}
-                      step={0.01}
                       className="w-24"
+                      id="budget"
+                      min={0}
+                      onChange={(e) =>
+                        setBudget(Number.parseFloat(e.target.value) || 0)
+                      }
                       required
+                      step={0.01}
+                      type="number"
+                      value={budget}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">${budget.toFixed(2)}</p>
+                  <p className="text-muted-foreground text-xs">
+                    ${budget.toFixed(2)}
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -749,12 +806,12 @@ export default function MarketPage() {
                   <div className="flex flex-wrap gap-2">
                     {[10, 50, 100, 500, 1000, 5000].map((preset) => (
                       <Button
+                        className="h-8"
                         key={preset}
+                        onClick={() => handleBudgetPreset(preset)}
+                        size="sm"
                         type="button"
                         variant={budget === preset ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => handleBudgetPreset(preset)}
-                        className="h-8"
                       >
                         {preset >= 1000 ? `$${preset / 1000}K` : `$${preset}`}
                       </Button>
@@ -764,7 +821,7 @@ export default function MarketPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="sortBy">Sort By</Label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
+                  <Select onValueChange={setSortBy} value={sortBy}>
                     <SelectTrigger id="sortBy">
                       <SelectValue />
                     </SelectTrigger>
@@ -772,16 +829,23 @@ export default function MarketPage() {
                       <SelectItem value="quality">Market Quality</SelectItem>
                       <SelectItem value="reach">Potential Reach</SelectItem>
                       <SelectItem value="cost">Cost per Transaction</SelectItem>
-                      <SelectItem value="transactions">Total Transactions</SelectItem>
+                      <SelectItem value="transactions">
+                        Total Transactions
+                      </SelectItem>
                       <SelectItem value="users">Unique Users</SelectItem>
-                      <SelectItem value="confidence">Confidence Score</SelectItem>
+                      <SelectItem value="confidence">
+                        Confidence Score
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="networkFilter">Network</Label>
-                  <Select value={networkFilter} onValueChange={setNetworkFilter}>
+                  <Select
+                    onValueChange={setNetworkFilter}
+                    value={networkFilter}
+                  >
                     <SelectTrigger id="networkFilter">
                       <SelectValue />
                     </SelectTrigger>
@@ -795,18 +859,18 @@ export default function MarketPage() {
                 </div>
 
                 <Button
-                  type="submit"
                   className="w-full"
                   disabled={isAnalyzing || !resourcesLoaded}
+                  type="submit"
                 >
                   {isAnalyzing ? "Analyzing..." : "Analyze Opportunities"}
                 </Button>
               </form>
 
-              <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+              <div className="mt-3 flex items-center gap-2 text-muted-foreground text-xs">
                 <span
                   className={cn(
-                    "w-2 h-2 rounded-full",
+                    "h-2 w-2 rounded-full",
                     resourcesLoaded ? "bg-green-500" : "bg-yellow-500"
                   )}
                 />
@@ -817,61 +881,77 @@ export default function MarketPage() {
         </aside>
 
         {/* Content Area */}
-        <main className="flex-1 min-w-0 p-4">
+        <main className="min-w-0 flex-1 p-4">
           {/* Metrics Dashboard */}
           {filteredOpportunities.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
-              <Card className="hover:border-primary transition-colors cursor-pointer relative group">
+            <div className="mb-5 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+              <Card className="group relative cursor-pointer transition-colors hover:border-primary">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Total Budget</p>
-                  <p className="text-3xl font-semibold">${budget.toFixed(2)}</p>
+                  <p className="mb-1 text-muted-foreground text-xs">
+                    Total Budget
+                  </p>
+                  <p className="font-semibold text-3xl">${budget.toFixed(2)}</p>
                 </CardContent>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-primary transition-all group-hover:w-full" />
               </Card>
-              <Card className="hover:border-primary transition-colors cursor-pointer relative group">
+              <Card className="group relative cursor-pointer transition-colors hover:border-primary">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Potential Reach</p>
-                  <p className="text-3xl font-semibold">{metrics.totalReach.toLocaleString()}</p>
-                  <p className="text-xs text-green-600 mt-1">transactions</p>
+                  <p className="mb-1 text-muted-foreground text-xs">
+                    Potential Reach
+                  </p>
+                  <p className="font-semibold text-3xl">
+                    {metrics.totalReach.toLocaleString()}
+                  </p>
+                  <p className="mt-1 text-green-600 text-xs">transactions</p>
                 </CardContent>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-primary transition-all group-hover:w-full" />
               </Card>
-              <Card className="hover:border-primary transition-colors cursor-pointer relative group">
+              <Card className="group relative cursor-pointer transition-colors hover:border-primary">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Resources Found</p>
-                  <p className="text-3xl font-semibold">
+                  <p className="mb-1 text-muted-foreground text-xs">
+                    Resources Found
+                  </p>
+                  <p className="font-semibold text-3xl">
                     {metrics.totalResources.toLocaleString()}
                   </p>
                 </CardContent>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-primary transition-all group-hover:w-full" />
               </Card>
-              <Card className="hover:border-primary transition-colors cursor-pointer relative group">
+              <Card className="group relative cursor-pointer transition-colors hover:border-primary">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Estimated Unique Users</p>
-                  <p className="text-3xl font-semibold">
+                  <p className="mb-1 text-muted-foreground text-xs">
+                    Estimated Unique Users
+                  </p>
+                  <p className="font-semibold text-3xl">
                     {metrics.estimatedUniqueUsers.toLocaleString()}
                   </p>
                   {metrics.estimatedUniqueUsers < metrics.naiveTotalUsers &&
                     metrics.naiveTotalUsers > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="mt-1 text-muted-foreground text-xs">
                         ~
                         {(
-                          (1 - metrics.estimatedUniqueUsers / metrics.naiveTotalUsers) *
+                          (1 -
+                            metrics.estimatedUniqueUsers /
+                              metrics.naiveTotalUsers) *
                           100
                         ).toFixed(0)}
                         % overlap accounted
                       </p>
                     )}
                 </CardContent>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-primary transition-all group-hover:w-full" />
               </Card>
-              <Card className="hover:border-primary transition-colors cursor-pointer relative group">
+              <Card className="group relative cursor-pointer transition-colors hover:border-primary">
                 <CardContent className="p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Avg Reach per User</p>
-                  <p className="text-3xl font-semibold">{metrics.reachPerUser}</p>
-                  <p className="text-xs text-green-600 mt-1">transactions</p>
+                  <p className="mb-1 text-muted-foreground text-xs">
+                    Avg Reach per User
+                  </p>
+                  <p className="font-semibold text-3xl">
+                    {metrics.reachPerUser}
+                  </p>
+                  <p className="mt-1 text-green-600 text-xs">transactions</p>
                 </CardContent>
-                <div className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-primary transition-all group-hover:w-full" />
               </Card>
             </div>
           )}
@@ -880,87 +960,97 @@ export default function MarketPage() {
           {filteredOpportunities.length > 0 && (
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center flex-wrap gap-3">
-                  <div className="flex gap-3 items-center">
-                    <div className="inline-flex bg-muted rounded-md p-0.5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="inline-flex rounded-md bg-muted p-0.5">
                       <Button
+                        className="h-8"
+                        onClick={() => setCurrentView("table")}
+                        size="sm"
                         type="button"
                         variant={currentView === "table" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setCurrentView("table")}
-                        className="h-8"
                       >
                         📊 Table
                       </Button>
                       <Button
+                        className="h-8"
+                        onClick={() => setCurrentView("grid")}
+                        size="sm"
                         type="button"
                         variant={currentView === "grid" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setCurrentView("grid")}
-                        className="h-8"
                       >
                         🎴 Cards
                       </Button>
                       <Button
+                        className="h-8"
+                        onClick={() => setCurrentView("chart")}
+                        size="sm"
                         type="button"
                         variant={currentView === "chart" ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setCurrentView("chart")}
-                        className="h-8"
                       >
                         📈 Charts
                       </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2 items-center">
+                  <div className="flex items-center gap-2">
                     <Input
-                      type="text"
-                      placeholder="🔍 Search resources..."
-                      value={searchQuery}
+                      className="h-8 w-48"
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48 h-8"
+                      placeholder="🔍 Search resources..."
+                      type="text"
+                      value={searchQuery}
                     />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {filteredOpportunities.length.toLocaleString()} results
                     </span>
                   </div>
                 </div>
 
                 {/* Filters */}
-                <div className="mt-4 p-3 bg-muted rounded-md border">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-semibold text-muted-foreground">Filters:</span>
-                    {["all", "high-quality", "high-reach", "low-cost", "high-users"].map(
-                      (filter) => (
-                        <Button
-                          key={filter}
-                          type="button"
-                          variant={currentFilters.includes(filter) ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleFilterClick(filter)}
-                          className="h-7 rounded-full"
-                        >
-                          {filter === "all"
-                            ? "All"
-                            : filter === "high-quality"
+                <div className="mt-4 rounded-md border bg-muted p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-muted-foreground text-xs">
+                      Filters:
+                    </span>
+                    {[
+                      "all",
+                      "high-quality",
+                      "high-reach",
+                      "low-cost",
+                      "high-users",
+                    ].map((filter) => (
+                      <Button
+                        className="h-7 rounded-full"
+                        key={filter}
+                        onClick={() => handleFilterClick(filter)}
+                        size="sm"
+                        type="button"
+                        variant={
+                          currentFilters.includes(filter)
+                            ? "default"
+                            : "outline"
+                        }
+                      >
+                        {filter === "all"
+                          ? "All"
+                          : filter === "high-quality"
                             ? "High Quality"
                             : filter === "high-reach"
-                            ? "High Reach"
-                            : filter === "low-cost"
-                            ? "Low Cost"
-                            : "High Users"}
-                        </Button>
-                      )
-                    )}
+                              ? "High Reach"
+                              : filter === "low-cost"
+                                ? "Low Cost"
+                                : "High Users"}
+                      </Button>
+                    ))}
                     <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
+                      className="ml-auto h-7"
                       onClick={() => {
                         setCurrentFilters(["all"]);
                         setSearchQuery("");
                       }}
-                      className="h-7 ml-auto"
+                      size="sm"
+                      type="button"
+                      variant="outline"
                     >
                       Clear
                     </Button>
@@ -973,18 +1063,28 @@ export default function MarketPage() {
                   <div className="space-y-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">Market Distribution by Network</CardTitle>
+                        <CardTitle className="text-sm">
+                          Market Distribution by Network
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <canvas ref={distributionChartRef} className="w-full h-[300px]" />
+                        <canvas
+                          className="h-[300px] w-full"
+                          ref={distributionChartRef}
+                        />
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">Reach vs Cost Analysis</CardTitle>
+                        <CardTitle className="text-sm">
+                          Reach vs Cost Analysis
+                        </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <canvas ref={scatterChartRef} className="w-full h-[300px]" />
+                        <canvas
+                          className="h-[300px] w-full"
+                          ref={scatterChartRef}
+                        />
                       </CardContent>
                     </Card>
                   </div>
@@ -1010,34 +1110,43 @@ export default function MarketPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredOpportunities.map((opp, idx) => {
-                          const confidencePercent = (opp.confidenceScore * 100).toFixed(0);
-                          const qualityPercent = (opp.marketQuality * 100).toFixed(0);
+                          const confidencePercent = (
+                            opp.confidenceScore * 100
+                          ).toFixed(0);
+                          const qualityPercent = (
+                            opp.marketQuality * 100
+                          ).toFixed(0);
 
                           return (
                             <TableRow key={idx}>
                               <TableCell>
                                 <a
+                                  className="break-all font-medium text-primary hover:underline"
                                   href={opp.resource}
-                                  target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-primary hover:underline font-medium break-all"
+                                  target="_blank"
                                 >
                                   {opp.resource}
                                 </a>
                               </TableCell>
-                              <TableCell className="max-w-[300px] text-xs text-muted-foreground">
+                              <TableCell className="max-w-[300px] text-muted-foreground text-xs">
                                 {opp.description || (
-                                  <span className="italic text-muted-foreground">
+                                  <span className="text-muted-foreground italic">
                                     No description
                                   </span>
                                 )}
                               </TableCell>
-                              <TableCell>${opp.maxAmountRequired.toFixed(4)}</TableCell>
                               <TableCell>
-                                <strong>{opp.potentialReach.toLocaleString()}</strong>
+                                ${opp.maxAmountRequired.toFixed(4)}
+                              </TableCell>
+                              <TableCell>
+                                <strong>
+                                  {opp.potentialReach.toLocaleString()}
+                                </strong>
                                 {opp.theoreticalReach > opp.potentialReach && (
-                                  <div className="text-xs text-muted-foreground mt-0.5">
-                                    (theoretical: {opp.theoreticalReach.toLocaleString()})
+                                  <div className="mt-0.5 text-muted-foreground text-xs">
+                                    (theoretical:{" "}
+                                    {opp.theoreticalReach.toLocaleString()})
                                   </div>
                                 )}
                               </TableCell>
@@ -1047,23 +1156,27 @@ export default function MarketPage() {
                                     opp.marketQuality >= 0.7
                                       ? "default"
                                       : opp.marketQuality >= 0.4
-                                      ? "secondary"
-                                      : "outline"
+                                        ? "secondary"
+                                        : "outline"
                                   }
                                 >
                                   {qualityPercent}%
                                 </Badge>
                               </TableCell>
-                              <TableCell>{opp.totalTransactions.toLocaleString()}</TableCell>
-                              <TableCell>{opp.totalUniqueUsers.toLocaleString()}</TableCell>
+                              <TableCell>
+                                {opp.totalTransactions.toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                {opp.totalUniqueUsers.toLocaleString()}
+                              </TableCell>
                               <TableCell>
                                 <Badge
                                   variant={
                                     opp.confidenceScore >= 0.7
                                       ? "default"
                                       : opp.confidenceScore >= 0.4
-                                      ? "secondary"
-                                      : "outline"
+                                        ? "secondary"
+                                        : "outline"
                                   }
                                 >
                                   {confidencePercent}%
@@ -1074,9 +1187,9 @@ export default function MarketPage() {
                               </TableCell>
                               <TableCell>
                                 <Button
-                                  variant="outline"
-                                  size="sm"
                                   onClick={() => openTestModal(opp.resource)}
+                                  size="sm"
+                                  variant="outline"
                                 >
                                   Test
                                 </Button>
@@ -1091,37 +1204,44 @@ export default function MarketPage() {
 
                 {/* Grid View */}
                 {currentView === "grid" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredOpportunities.map((opp, idx) => {
-                      const confidencePercent = (opp.confidenceScore * 100).toFixed(0);
-                      const qualityPercent = (opp.marketQuality * 100).toFixed(0);
+                      const confidencePercent = (
+                        opp.confidenceScore * 100
+                      ).toFixed(0);
+                      const qualityPercent = (opp.marketQuality * 100).toFixed(
+                        0
+                      );
 
                       return (
-                        <Card key={idx} className="hover:border-primary transition-colors">
+                        <Card
+                          className="transition-colors hover:border-primary"
+                          key={idx}
+                        >
                           <CardHeader>
                             <CardTitle className="text-sm">
                               <a
+                                className="break-all text-primary hover:underline"
                                 href={opp.resource}
-                                target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary hover:underline break-all"
+                                target="_blank"
                               >
                                 {opp.resource}
                               </a>
                             </CardTitle>
                             {opp.description && (
-                              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                              <p className="mt-2 line-clamp-2 text-muted-foreground text-xs">
                                 {opp.description}
                               </p>
                             )}
-                            <div className="flex gap-2 mt-2 flex-wrap">
+                            <div className="mt-2 flex flex-wrap gap-2">
                               <Badge
                                 variant={
                                   opp.marketQuality >= 0.7
                                     ? "default"
                                     : opp.marketQuality >= 0.4
-                                    ? "secondary"
-                                    : "outline"
+                                      ? "secondary"
+                                      : "outline"
                                 }
                               >
                                 {qualityPercent}% Quality
@@ -1131,8 +1251,8 @@ export default function MarketPage() {
                                   opp.confidenceScore >= 0.7
                                     ? "default"
                                     : opp.confidenceScore >= 0.4
-                                    ? "secondary"
-                                    : "outline"
+                                      ? "secondary"
+                                      : "outline"
                                 }
                               >
                                 {confidencePercent}% Confidence
@@ -1143,66 +1263,86 @@ export default function MarketPage() {
                           <CardContent>
                             <div className="grid grid-cols-2 gap-3 text-sm">
                               <div>
-                                <p className="text-xs text-muted-foreground">Cost per Transaction</p>
-                                <p className="font-semibold">${opp.maxAmountRequired.toFixed(4)}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Cost per Transaction
+                                </p>
+                                <p className="font-semibold">
+                                  ${opp.maxAmountRequired.toFixed(4)}
+                                </p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Potential Reach</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Potential Reach
+                                </p>
                                 <p className="font-semibold">
                                   {opp.potentialReach.toLocaleString()}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Total Transactions</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Total Transactions
+                                </p>
                                 <p className="font-semibold">
                                   {opp.totalTransactions.toLocaleString()}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Unique Users</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Unique Users
+                                </p>
                                 <p className="font-semibold">
                                   {opp.totalUniqueUsers.toLocaleString()}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Monthly Transactions</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Monthly Transactions
+                                </p>
                                 <p className="font-semibold">
                                   {opp.transactionsMonth.toLocaleString()}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Daily Average</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Daily Average
+                                </p>
                                 <p className="font-semibold">
                                   {opp.averageDailyTransactions.toFixed(2)}
                                 </p>
                               </div>
                               <div className="col-span-2">
-                                <p className="text-xs text-muted-foreground mb-1">Market Quality</p>
+                                <p className="mb-1 text-muted-foreground text-xs">
+                                  Market Quality
+                                </p>
                                 <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                                     <div
                                       className="h-full bg-primary transition-all"
-                                      style={{ width: `${opp.marketQuality * 100}%` }}
+                                      style={{
+                                        width: `${opp.marketQuality * 100}%`,
+                                      }}
                                     />
                                   </div>
-                                  <span className="text-xs font-semibold">
+                                  <span className="font-semibold text-xs">
                                     {(opp.marketQuality * 100).toFixed(0)}%
                                   </span>
                                 </div>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Recommended Spend</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Recommended Spend
+                                </p>
                                 <p className="font-semibold">
                                   ${opp.recommendedAllocation.toFixed(2)}
                                 </p>
                               </div>
                             </div>
-                            <div className="mt-4 pt-4 border-t">
+                            <div className="mt-4 border-t pt-4">
                               <Button
-                                variant="outline"
-                                size="sm"
                                 className="w-full"
                                 onClick={() => openTestModal(opp.resource)}
+                                size="sm"
+                                variant="outline"
                               >
                                 Test Resource
                               </Button>
@@ -1218,43 +1358,53 @@ export default function MarketPage() {
           )}
 
           {/* Empty State */}
-          {filteredOpportunities.length === 0 && currentOpportunities.length === 0 && (
-            <Card>
-              <CardContent className="py-16 text-center">
-                <div className="text-5xl mb-4">📊</div>
-                <h3 className="text-lg font-semibold mb-2">No results yet</h3>
-                <p className="text-sm text-muted-foreground">
-                  Enter your budget and click "Analyze Opportunities" to see market potential
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {filteredOpportunities.length === 0 &&
+            currentOpportunities.length === 0 && (
+              <Card>
+                <CardContent className="py-16 text-center">
+                  <div className="mb-4 text-5xl">📊</div>
+                  <h3 className="mb-2 font-semibold text-lg">No results yet</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Enter your budget and click "Analyze Opportunities" to see
+                    market potential
+                  </p>
+                </CardContent>
+              </Card>
+            )}
         </main>
       </div>
 
       {/* Test Modal */}
-      <Dialog open={testModalOpen} onOpenChange={setTestModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+      <Dialog onOpenChange={setTestModalOpen} open={testModalOpen}>
+        <DialogContent className="max-h-[90vh] max-w-4xl">
           <DialogHeader>
             <DialogTitle>Test Resource</DialogTitle>
           </DialogHeader>
           {currentTestResource && (
             <div className="space-y-4">
               <Card>
-                <CardContent className="p-3 space-y-2 text-sm">
+                <CardContent className="space-y-2 p-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Resource:</span>
-                    <span className="font-medium">{currentTestResource.resource}</span>
+                    <span className="font-medium">
+                      {currentTestResource.resource}
+                    </span>
                   </div>
                   {opportunityData?.description && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Description:</span>
-                      <span className="font-medium">{opportunityData.description}</span>
+                      <span className="text-muted-foreground">
+                        Description:
+                      </span>
+                      <span className="font-medium">
+                        {opportunityData.description}
+                      </span>
                     </div>
                   )}
                   {opportunityData && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Cost per Transaction:</span>
+                      <span className="text-muted-foreground">
+                        Cost per Transaction:
+                      </span>
                       <span className="font-medium">
                         ${opportunityData.maxAmountRequired.toFixed(4)}
                       </span>
@@ -1262,26 +1412,29 @@ export default function MarketPage() {
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Network:</span>
-                    <span className="font-medium">{accept?.network || "unknown"}</span>
+                    <span className="font-medium">
+                      {accept?.network || "unknown"}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Method:</span>
                     <span className="font-medium">
-                      {currentTestResource.metadata?.outputSchema?.input?.method || "GET"}
+                      {currentTestResource.metadata?.outputSchema?.input
+                        ?.method || "GET"}
                     </span>
                   </div>
                 </CardContent>
               </Card>
 
-              <Tabs defaultValue="request" className="w-full">
+              <Tabs className="w-full" defaultValue="request">
                 <TabsList>
                   <TabsTrigger value="request">Request</TabsTrigger>
                   <TabsTrigger value="response">Response</TabsTrigger>
                 </TabsList>
-                <TabsContent value="request" className="space-y-4">
+                <TabsContent className="space-y-4" value="request">
                   <div className="space-y-2">
                     <Label>Method</Label>
-                    <Select value={testMethod} onValueChange={setTestMethod}>
+                    <Select onValueChange={setTestMethod} value={testMethod}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1295,42 +1448,44 @@ export default function MarketPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>URL</Label>
-                    <code className="block p-3 bg-muted rounded-md text-xs break-all font-mono">
+                    <code className="block break-all rounded-md bg-muted p-3 font-mono text-xs">
                       {currentTestResource.resource}
                     </code>
                   </div>
                   <div className="space-y-2">
                     <Label>Headers</Label>
                     <Textarea
-                      value={testHeaders}
+                      className="font-mono text-xs"
                       onChange={(e) => setTestHeaders(e.target.value)}
                       placeholder='{"Content-Type": "application/json"}'
-                      className="font-mono text-xs"
+                      value={testHeaders}
                     />
-                    <p className="text-xs text-muted-foreground">JSON format for headers</p>
+                    <p className="text-muted-foreground text-xs">
+                      JSON format for headers
+                    </p>
                   </div>
                   {(testMethod === "POST" || testMethod === "PUT") && (
                     <div className="space-y-2">
                       <Label>Request Body</Label>
                       <Textarea
-                        value={testBody}
+                        className="font-mono text-xs"
                         onChange={(e) => setTestBody(e.target.value)}
                         placeholder='{"key": "value"}'
-                        className="font-mono text-xs"
+                        value={testBody}
                       />
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         JSON format for request body (for POST/PUT)
                       </p>
                     </div>
                   )}
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3">
                     <p className="text-xs text-yellow-800">
-                      <strong>Note:</strong> Some APIs may block requests due to CORS policy. If
-                      you encounter CORS errors, the API may require server-side requests or
-                      specific headers.
+                      <strong>Note:</strong> Some APIs may block requests due to
+                      CORS policy. If you encounter CORS errors, the API may
+                      require server-side requests or specific headers.
                     </p>
                   </div>
-                  <Button onClick={executeTest} className="w-full">
+                  <Button className="w-full" onClick={executeTest}>
                     Execute Test
                   </Button>
                 </TabsContent>
@@ -1340,17 +1495,23 @@ export default function MarketPage() {
                       <CardHeader>
                         <div className="flex items-center gap-3">
                           <Badge
-                            variant={testResponseStatus.startsWith("2") ? "default" : "destructive"}
+                            variant={
+                              testResponseStatus.startsWith("2")
+                                ? "default"
+                                : "destructive"
+                            }
                           >
                             {testResponseStatus}
                           </Badge>
                           {testResponseTime && (
-                            <span className="text-xs text-muted-foreground">{testResponseTime}</span>
+                            <span className="text-muted-foreground text-xs">
+                              {testResponseTime}
+                            </span>
                           )}
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <pre className="p-3 bg-muted rounded-md text-xs overflow-auto max-h-[400px] font-mono whitespace-pre-wrap break-all">
+                        <pre className="max-h-[400px] overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 font-mono text-xs">
                           {typeof testResponse === "string"
                             ? testResponse
                             : JSON.stringify(testResponse, null, 2)}
@@ -1358,7 +1519,7 @@ export default function MarketPage() {
                       </CardContent>
                     </Card>
                   ) : (
-                    <div className="text-center py-10 text-muted-foreground">
+                    <div className="py-10 text-center text-muted-foreground">
                       No response yet. Execute a test request first.
                     </div>
                   )}
