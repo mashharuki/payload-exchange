@@ -36,7 +36,7 @@ Full configuration options: [OpenAI Apps SDK MCP Documentation](https://develope
 
 ```typescript
 const nextConfig: NextConfig = {
-  assetPrefix: baseURL,  // Prevents 404s on /_next/ files in iframe
+  assetPrefix: DEPLOYMENT_URL,  // Prevents 404s on /_next/ files in iframe
 };
 ```
 
@@ -68,7 +68,7 @@ The `<NextChatSDKBootstrap>` component patches browser APIs to work correctly wi
 ```tsx
 <html lang="en" suppressHydrationWarning>
   <head>
-    <NextChatSDKBootstrap baseUrl={baseURL} />
+    <NextChatSDKBootstrap baseUrl={DEPLOYMENT_URL} />
   </head>
   <body>{children}</body>
 </html>
