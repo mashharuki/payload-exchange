@@ -96,7 +96,7 @@ export default function MarketPage() {
     Opportunity[]
   >([]);
   const [currentView, setCurrentView] = useState<"table" | "grid" | "chart">(
-    "table"
+    "table",
   );
   const [currentFilters, setCurrentFilters] = useState<string[]>(["all"]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -144,7 +144,7 @@ export default function MarketPage() {
   // Calculate market quality score (0-1)
   const calculateMarketQualityScore = (
     analytics: PaymentAnalytics | undefined,
-    confidenceScore: number
+    confidenceScore: number,
   ): number => {
     const weights = {
       transactionVolume: 0.3,
@@ -155,7 +155,7 @@ export default function MarketPage() {
 
     const transactionScore = Math.min(
       1,
-      Math.log10((analytics?.totalTransactions || 0) + 1) / 4
+      Math.log10((analytics?.totalTransactions || 0) + 1) / 4,
     );
     const userScore = Math.min(1, (analytics?.totalUniqueUsers || 0) / 100);
     const activityScore = Math.min(1, (analytics?.transactionsMonth || 0) / 50);
@@ -174,7 +174,7 @@ export default function MarketPage() {
     budget: number,
     costPerTx: number,
     analytics: PaymentAnalytics | undefined,
-    marketQuality: number
+    marketQuality: number,
   ): number => {
     const theoreticalMax = Math.floor(budget / costPerTx);
 
@@ -193,7 +193,7 @@ export default function MarketPage() {
 
     const realisticReach = Math.min(
       theoreticalMax,
-      Math.floor(activityBasedReach * qualityMultiplier)
+      Math.floor(activityBasedReach * qualityMultiplier),
     );
 
     return Math.max(realisticReach, theoreticalMax > 0 ? 1 : 0);
@@ -204,7 +204,7 @@ export default function MarketPage() {
     budget: number,
     costPerTx: number,
     analytics: PaymentAnalytics | undefined,
-    marketQuality: number
+    marketQuality: number,
   ): number => {
     const monthlyActivity =
       analytics?.transactionsMonth ||
@@ -253,19 +253,19 @@ export default function MarketPage() {
 
               const marketQuality = calculateMarketQualityScore(
                 analytics,
-                confidenceScore
+                confidenceScore,
               );
               const realisticReach = calculateRealisticReach(
                 budget,
                 maxAmount,
                 analytics,
-                marketQuality
+                marketQuality,
               );
               const recommendedAllocation = calculateRecommendedAllocation(
                 budget,
                 maxAmount,
                 analytics,
-                marketQuality
+                marketQuality,
               );
 
               opportunities.push({
@@ -294,7 +294,7 @@ export default function MarketPage() {
 
       return opportunities;
     },
-    [resourcesData]
+    [resourcesData],
   );
 
   // Sort opportunities
@@ -330,7 +330,7 @@ export default function MarketPage() {
 
       return sorted;
     },
-    []
+    [],
   );
 
   // Estimate unique users accounting for overlap
@@ -358,7 +358,7 @@ export default function MarketPage() {
         }
 
         const sorted = [...group].sort(
-          (a, b) => b.totalUniqueUsers - a.totalUniqueUsers
+          (a, b) => b.totalUniqueUsers - a.totalUniqueUsers,
         );
 
         let uniqueUsers = sorted[0].totalUniqueUsers;
@@ -369,12 +369,12 @@ export default function MarketPage() {
 
           const transactionRatio = Math.min(
             current.totalTransactions / (previous.totalTransactions + 1),
-            previous.totalTransactions / (current.totalTransactions + 1)
+            previous.totalTransactions / (current.totalTransactions + 1),
           );
 
           const userBaseRatio = Math.min(
             current.totalUniqueUsers / (previous.totalUniqueUsers + 1),
-            previous.totalUniqueUsers / (current.totalUniqueUsers + 1)
+            previous.totalUniqueUsers / (current.totalUniqueUsers + 1),
           );
 
           const overlapFactor =
@@ -386,7 +386,7 @@ export default function MarketPage() {
             current.totalUniqueUsers * overlapFactor * 0.3;
           const newUniqueUsers = Math.max(
             0,
-            current.totalUniqueUsers - estimatedOverlap
+            current.totalUniqueUsers - estimatedOverlap,
           );
 
           uniqueUsers += newUniqueUsers;
@@ -399,7 +399,7 @@ export default function MarketPage() {
       if (networkCount > 1) {
         const crossNetworkOverlapFactor = Math.min(
           0.15,
-          0.05 + (networkCount - 2) * 0.02
+          0.05 + (networkCount - 2) * 0.02,
         );
         estimatedUniqueUsers =
           estimatedUniqueUsers * (1 - crossNetworkOverlapFactor);
@@ -407,7 +407,7 @@ export default function MarketPage() {
 
       return Math.round(estimatedUniqueUsers);
     },
-    []
+    [],
   );
 
   // Calculate metrics
@@ -415,12 +415,12 @@ export default function MarketPage() {
     (budget: number, opportunities: Opportunity[]) => {
       const totalReach = opportunities.reduce(
         (sum, opp) => sum + opp.potentialReach,
-        0
+        0,
       );
       const estimatedUniqueUsers = estimateUniqueUsers(opportunities);
       const naiveTotalUsers = opportunities.reduce(
         (sum, opp) => sum + opp.totalUniqueUsers,
-        0
+        0,
       );
       const reachPerUser =
         estimatedUniqueUsers > 0
@@ -435,7 +435,7 @@ export default function MarketPage() {
         totalResources: opportunities.length,
       };
     },
-    [estimateUniqueUsers]
+    [estimateUniqueUsers],
   );
 
   // Handle form submission
@@ -474,7 +474,7 @@ export default function MarketPage() {
       resourcesData,
       analyzeMarket,
       sortOpportunities,
-    ]
+    ],
   );
 
   // Apply filters and search
@@ -484,7 +484,7 @@ export default function MarketPage() {
     // Apply search
     if (searchQuery) {
       filtered = filtered.filter((opp) =>
-        opp.resource.toLowerCase().includes(searchQuery.toLowerCase())
+        opp.resource.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -548,7 +548,7 @@ export default function MarketPage() {
 
     if (fullResource.metadata?.outputSchema?.input?.headerFields) {
       Object.keys(
-        fullResource.metadata.outputSchema.input.headerFields
+        fullResource.metadata.outputSchema.input.headerFields,
       ).forEach((key) => {
         if (key !== "X-PAYMENT") {
           defaultHeaders[key] = "";
@@ -704,10 +704,10 @@ export default function MarketPage() {
       ctx.clearRect(0, 0, width, height);
 
       const maxCost = Math.max(
-        ...filteredOpportunities.map((o) => o.maxAmountRequired)
+        ...filteredOpportunities.map((o) => o.maxAmountRequired),
       );
       const maxReach = Math.max(
-        ...filteredOpportunities.map((o) => o.potentialReach)
+        ...filteredOpportunities.map((o) => o.potentialReach),
       );
 
       ctx.strokeStyle = "#dadde1";
@@ -744,7 +744,7 @@ export default function MarketPage() {
 
   const opportunityData = currentTestResource
     ? filteredOpportunities.find(
-        (opp) => opp.resource === currentTestResource.resource
+        (opp) => opp.resource === currentTestResource.resource,
       )
     : null;
   const accept = currentTestResource?.accepts?.[0];
@@ -871,7 +871,7 @@ export default function MarketPage() {
                 <span
                   className={cn(
                     "h-2 w-2 rounded-full",
-                    resourcesLoaded ? "bg-green-500" : "bg-yellow-500"
+                    resourcesLoaded ? "bg-green-500" : "bg-yellow-500",
                   )}
                 />
                 <span>{statusText}</span>
@@ -1210,7 +1210,7 @@ export default function MarketPage() {
                         opp.confidenceScore * 100
                       ).toFixed(0);
                       const qualityPercent = (opp.marketQuality * 100).toFixed(
-                        0
+                        0,
                       );
 
                       return (

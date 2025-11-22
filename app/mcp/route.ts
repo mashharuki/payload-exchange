@@ -1,6 +1,6 @@
 import { createMcpHandler } from "mcp-handler";
-import { DEPLOYMENT_URL } from "vercel-url";
 import { z } from "zod";
+import { APP_BASE_URL } from "@/lib/config";
 
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
   const result = await fetch(`${baseUrl}${path}`);
@@ -29,7 +29,7 @@ function widgetMeta(widget: ContentWidget) {
 }
 
 const handler = createMcpHandler(async (server) => {
-  const html = await getAppsSdkCompatibleHtml(DEPLOYMENT_URL, "/");
+  const html = await getAppsSdkCompatibleHtml(APP_BASE_URL, "/");
 
   const contentWidget: ContentWidget = {
     id: "show_content",
@@ -66,7 +66,7 @@ const handler = createMcpHandler(async (server) => {
           },
         },
       ],
-    })
+    }),
   );
 
   server.registerTool(
@@ -94,7 +94,7 @@ const handler = createMcpHandler(async (server) => {
         timestamp: new Date().toISOString(),
       },
       _meta: widgetMeta(contentWidget),
-    })
+    }),
   );
 });
 

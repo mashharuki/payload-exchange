@@ -22,7 +22,7 @@ import {
  * ```
  */
 export function useOpenAIGlobal<K extends keyof OpenAIGlobals>(
-  key: K
+  key: K,
 ): OpenAIGlobals[K] | null {
   return useSyncExternalStore(
     (onChange) => {
@@ -49,6 +49,6 @@ export function useOpenAIGlobal<K extends keyof OpenAIGlobals>(
     },
     () =>
       typeof window !== "undefined" ? (window.openai?.[key] ?? null) : null,
-    () => null
+    () => null,
   );
 }

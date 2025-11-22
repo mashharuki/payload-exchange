@@ -1,8 +1,8 @@
+import "@/app/globals.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { DEPLOYMENT_URL } from "vercel-url";
-import { CDPProvider } from "../components/cdp-provider";
-import "./globals.css";
+import { CDPProvider } from "@/components/cdp-provider";
+import { APP_BASE_URL } from "@/lib/config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <NextChatSDKBootstrap baseUrl={DEPLOYMENT_URL} />
+        <NextChatSDKBootstrap baseUrl={APP_BASE_URL} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -101,12 +101,12 @@ function NextChatSDKBootstrap({ baseUrl }: { baseUrl: string }) {
                     }
                   } catch {
                     console.warn(
-                      "openExternal failed, likely not in OpenAI client"
+                      "openExternal failed, likely not in OpenAI client",
                     );
                   }
                 }
               },
-              true
+              true,
             );
 
             if (isInIframe && window.location.origin !== appOrigin) {

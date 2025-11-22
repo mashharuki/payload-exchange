@@ -16,7 +16,7 @@ import { useOpenAIGlobal } from "./use-openai-global";
  * ```
  */
 export function useWidgetProps<T extends Record<string, unknown>>(
-  defaultState?: T | (() => T)
+  defaultState?: T | (() => T),
 ): T {
   const toolOutput = useOpenAIGlobal("toolOutput") as T;
 

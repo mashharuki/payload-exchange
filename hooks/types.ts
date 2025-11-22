@@ -78,7 +78,7 @@ export type CallToolResponse = {
 /** Calling APIs */
 export type CallTool = (
   name: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
 ) => Promise<CallToolResponse>;
 
 /** Extra events */

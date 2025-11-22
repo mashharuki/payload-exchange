@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
-import { DEPLOYMENT_URL } from "vercel-url";
+import { APP_BASE_URL } from "@/lib/config";
 
 const nextConfig: NextConfig = {
-  assetPrefix: DEPLOYMENT_URL,
+  assetPrefix: APP_BASE_URL,
   turbopack: {
     resolveAlias: {
       "zod/v3": "zod",

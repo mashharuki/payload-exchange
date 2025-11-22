@@ -7,11 +7,11 @@ import type { UnknownObject } from "./types";
 import { useOpenAIGlobal } from "./use-openai-global";
 
 export function useWidgetState<T extends UnknownObject>(
-  defaultState: T | (() => T)
+  defaultState: T | (() => T),
 ): readonly [T, (state: SetStateAction<T>) => void];
 
 export function useWidgetState<T extends UnknownObject>(
-  defaultState?: T | (() => T | null) | null
+  defaultState?: T | (() => T | null) | null,
 ): readonly [T | null, (state: SetStateAction<T | null>) => void];
 
 /**
@@ -36,7 +36,7 @@ export function useWidgetState<T extends UnknownObject>(
  * ```
  */
 export function useWidgetState<T extends UnknownObject>(
-  defaultState?: T | (() => T | null) | null
+  defaultState?: T | (() => T | null) | null,
 ): readonly [T | null, (state: SetStateAction<T | null>) => void] {
   const widgetStateFromWindow = useOpenAIGlobal("widgetState") as T;
 
@@ -65,7 +65,7 @@ export function useWidgetState<T extends UnknownObject>(
         return newState;
       });
     },
-    [window.openai.setWidgetState]
+    [window.openai.setWidgetState],
   );
 
   return [widgetState, setWidgetState] as const;
