@@ -185,4 +185,28 @@ body > div[style*="z-index"] {
 [style*="inset:0"],
 [style*="inset:0px"] {
   z-index: 99998 !important;
+@layer utilities {
+  .dotted-underline {
+    border-bottom: 1px dotted currentColor;
+    padding-bottom: 1px;
+  }
+  
+  .dotted-underline-network {
+    border-bottom: 1px dotted currentColor;
+    padding-bottom: 1px;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 3s linear infinite;
+}
 }

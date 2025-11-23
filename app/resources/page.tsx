@@ -4,6 +4,7 @@ import {
   listResources,
   searchResources,
 } from "@/server/core/resources/registry";
+import { ResourcesClient } from "./resources-client";
 
 export default async function ResourcesPage({
   searchParams,
@@ -12,6 +13,7 @@ export default async function ResourcesPage({
 }) {
   const { mode, url, query } = await searchParams;
 
+  // Handle view mode separately (server-rendered detail view)
   if (mode === "view" && url) {
     const resource = await getResource(url);
 
@@ -55,87 +57,13 @@ export default async function ResourcesPage({
     );
   }
 
+  // Handle search mode
   if (mode === "search" && query) {
     const results = await searchResources(query);
-
-    return (
-      <div className="flex flex-col gap-4 p-4">
-        <div className="flex items-center justify-between">
-          <div>{`# Search Results for "${query}"`}</div>
-          <Link href="/resources?mode=list">
-            <button className="px-4 py-2 bg-gray-200 rounded">
-              Clear Search
-            </button>
-          </Link>
-        </div>
-
-        {results.length === 0 ? (
-          <div>No resources found.</div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {results.map((resource) => (
-              <div
-                key={resource.resource}
-                className="flex flex-col gap-2 rounded-lg border p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{resource.resource}</span>
-                  <Link
-                    href={`/resources?mode=view&url=${encodeURIComponent(
-                      resource.resource || "",
-                    )}`}
-                  >
-                    <button className="px-2 py-1 bg-gray-200 rounded text-sm">
-                      View
-                    </button>
-                  </Link>
-                </div>
-                <div className="flex gap-2">
-                  <span className="px-2 py-1 border rounded text-xs">
-                    {resource.type}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+    return <ResourcesClient resources={results} mode={mode} query={query} />;
   }
 
   // Default to list mode
   const resources = await listResources();
-
-  return (
-    <div className="flex flex-col gap-4 p-4">
-      <div># Resources</div>
-
-      <div className="flex flex-col gap-2">
-        {resources.map((resource) => (
-          <div
-            key={resource.resource}
-            className="flex flex-col gap-2 rounded-lg border p-4"
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-medium">{resource.resource}</span>
-              <Link
-                href={`/resources?mode=view&url=${encodeURIComponent(
-                  resource.resource || "",
-                )}`}
-              >
-                <button className="px-2 py-1 bg-gray-200 rounded text-sm">
-                  View
-                </button>
-              </Link>
-            </div>
-            <div className="flex gap-2">
-              <span className="px-2 py-1 border rounded text-xs">
-                {resource.type}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <ResourcesClient resources={resources} />;
 }

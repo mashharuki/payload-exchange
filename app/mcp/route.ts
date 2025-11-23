@@ -39,6 +39,7 @@ const handler = createMcpHandler(async (server) => {
     APP_BASE_URL,
     "/resources",
   );
+  const paywallHtml = await getAppsSdkCompatibleHtml(APP_BASE_URL, "/paywall");
 
   const contentWidget: ContentWidget = {
     id: "open_app",
@@ -59,6 +60,17 @@ const handler = createMcpHandler(async (server) => {
     invoked: "Resource loaded",
     html: resourcesHtml,
     description: "Displays resource content",
+    widgetDomain: "https://payload.exchange",
+  };
+
+  const paywallWidget: ContentWidget = {
+    id: "paywall_widget",
+    title: "Paywall",
+    templateUri: "ui://widget/paywall.html",
+    invoking: "Loading paywall...",
+    invoked: "Paywall displayed",
+    html: paywallHtml,
+    description: "Displays payment options for accessing a resource",
     widgetDomain: "https://payload.exchange",
   };
 
@@ -131,6 +143,36 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
+  server.registerResource(
+    "paywall-widget",
+    paywallWidget.templateUri,
+    {
+      title: paywallWidget.title,
+      description: paywallWidget.description,
+      mimeType: "text/html+skybridge",
+      _meta: {
+        "openai/widgetDescription": paywallWidget.description,
+        "openai/widgetPrefersBorder": false,
+      },
+    },
+    async (uri) => {
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: "text/html+skybridge",
+            text: `<html>${paywallWidget.html}</html>`,
+            _meta: {
+              "openai/widgetDescription": paywallWidget.description,
+              "openai/widgetPrefersBorder": false,
+              "openai/widgetDomain": paywallWidget.widgetDomain,
+            },
+          },
+        ],
+      };
+    },
+  );
+
   //@ts-ignore
   server.registerTool(
     contentWidget.id,
@@ -194,6 +236,50 @@ const handler = createMcpHandler(async (server) => {
         _meta: {
           ...widgetMeta(resourceWidget),
           "openai/outputTemplate": `${resourceWidget.templateUri}?mode=view&url=${encodeURIComponent(url)}`,
+        },
+      };
+    },
+  );
+
+  server.registerTool(
+    "show_paywall",
+    {
+      title: "Show Paywall",
+      description:
+        "Display paywall for an x402 resource. Use this when the user wants to access a resource that requires payment.",
+      inputSchema: {
+        resourceUrl: z.string().describe("The URL of the x402 resource"),
+      },
+      _meta: widgetMeta(paywallWidget),
+    },
+    async ({ resourceUrl }) => {
+      const resource = await getResource(resourceUrl);
+      if (!resource) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Resource not found: ${resourceUrl}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `To access ${resource.resource}, please complete one of the payment options below.`,
+          },
+        ],
+        structuredContent: {
+          resource: resource,
+          timestamp: new Date().toISOString(),
+        },
+        _meta: {
+          ...widgetMeta(paywallWidget),
+          "openai/outputTemplate": `${paywallWidget.templateUri}?resourceUrl=${encodeURIComponent(resourceUrl)}`,
         },
       };
     },
