@@ -72,6 +72,7 @@ export async function createRedemption(params: {
   userId: string;
   resourceId: string;
   instanceId: string;
+  sponsored_amount: bigint;
 }) {
   const id = crypto.randomUUID();
   await db.insert(redemptions).values({
@@ -141,6 +142,7 @@ export async function createAction(params: {
   coverageType: "full" | "percent";
   coveragePercent?: number;
   recurrence: "one_time_per_user" | "per_request";
+  max_redemption_price: bigint;
 }) {
   const id = crypto.randomUUID();
   await db.insert(actions).values({

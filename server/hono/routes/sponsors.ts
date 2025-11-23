@@ -46,6 +46,7 @@ sponsorsRouter.post("/actions", async (c) => {
     coverageType: "full" | "percent";
     coveragePercent?: number;
     recurrence: "one_time_per_user" | "per_request";
+    max_redemption_price: string; // bigint as string
   }>();
 
   let sponsor = await getSponsorByWallet(walletAddress);
@@ -60,7 +61,12 @@ sponsorsRouter.post("/actions", async (c) => {
 
   const actionId = await createAction({
     sponsorId: sponsor.id,
-    ...body,
+    pluginId: body.pluginId,
+    config: body.config,
+    coverageType: body.coverageType,
+    coveragePercent: body.coveragePercent,
+    recurrence: body.recurrence,
+    max_redemption_price: BigInt(body.max_redemption_price),
   });
 
   return c.json({ id: actionId, success: true });

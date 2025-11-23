@@ -399,15 +399,7 @@ async function proxyHandler(c: Context) {
         config: action.config as Record<string, unknown>,
       });
 
-      // Save redemption instance
-      const { createRedemption } = await import("@/server/db/queries");
-      await createRedemption({
-        actionId: action.id,
-        userId,
-        resourceId,
-        instanceId: startResult.instanceId,
-      });
-
+      // Compute coverage before creating redemption
       const { sponsorContribution, userContribution } = computeCoverage(
         challenge,
         {
@@ -419,6 +411,16 @@ async function proxyHandler(c: Context) {
           recurrence: action.recurrence as "one_time_per_user" | "per_request",
         },
       );
+
+      // Save redemption instance
+      const { createRedemption } = await import("@/server/db/queries");
+      await createRedemption({
+        actionId: action.id,
+        userId,
+        resourceId,
+        instanceId: startResult.instanceId,
+        sponsored_amount: sponsorContribution,
+      });
 
       return c.json({
         type: "action_required",
