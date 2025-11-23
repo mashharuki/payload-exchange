@@ -548,7 +548,7 @@ export default function SponsorActionsPage() {
               </div>
 
               <div>
-                <Label>Max Price Per User (USDC)</Label>
+                <Label>Max Sponsored Amount (USDC) per one redemption</Label>
                 <Input
                   type="number"
                   step="0.01"
