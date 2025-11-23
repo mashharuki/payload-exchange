@@ -1,12 +1,19 @@
 "use client";
 
-import { useEvmAddress, useIsSignedIn, useSignOut } from "@coinbase/cdp-hooks";
+import {
+  type APIError,
+  useEvmAddress,
+  useIsSignedIn,
+  useSignOut,
+} from "@coinbase/cdp-hooks";
+import { SendEvmTransactionButton } from "@coinbase/cdp-react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Label, Pie, PieChart } from "recharts";
+import { encodeFunctionData, parseUnits } from "viem";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer } from "@/components/ui/chart";
 import {
@@ -34,6 +41,8 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { WalletAuth } from "@/components/wallet-auth";
+import { USDC_CONTRACT_ADDRESS } from "@/lib/config";
+import { cn } from "@/lib/utils";
 
 interface Analytics {
   balance: string;
@@ -71,6 +80,9 @@ export default function SponsorDashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFundModal, setShowFundModal] = useState(false);
   const [fundAmount, setFundAmount] = useState("");
+  const [treasuryWallet, setTreasuryWallet] = useState<string>("");
+  const [fundingTransactionId, setFundingTransactionId] = useState<string>("");
+  const [isFunding, setIsFunding] = useState(false);
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [formData, setFormData] = useState({
@@ -373,11 +385,11 @@ export default function SponsorDashboard() {
     }
   };
 
-  const handleFund = async (e: React.FormEvent) => {
+  const handleFundInit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!evmAddress) return;
+    if (!evmAddress || !fundAmount) return;
     try {
-      const amount = BigInt(parseFloat(fundAmount) * 1_000_000);
+      const amount = BigInt(parseFloat(fundAmount) * 1_000_000); // Convert to smallest units
       const res = await fetch("/api/payload/sponsors/fund", {
         method: "POST",
         headers: {
@@ -392,13 +404,68 @@ export default function SponsorDashboard() {
       });
 
       if (res.ok) {
-        setFundAmount("");
-        setShowFundModal(false);
-        loadData();
+        const data = await res.json();
+        if (data.treasuryWallet) {
+          setTreasuryWallet(data.treasuryWallet);
+          setFundingTransactionId(data.fundingTransactionId);
+          setIsFunding(true);
+        } else if (data.transactionHash) {
+          // Already completed
+          setFundAmount("");
+          setIsFunding(false);
+          setShowFundModal(false);
+          loadData();
+          alert(`Funding successful! Transaction: ${data.transactionHash}`);
+        }
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to initialize funding");
       }
     } catch (error) {
       console.error("Failed to fund:", error);
+      alert("Failed to initialize funding");
     }
+  };
+
+  const handleTransactionSuccess = async (hash: string) => {
+    if (!evmAddress || !fundingTransactionId) return;
+    try {
+      const amount = BigInt(parseFloat(fundAmount) * 1_000_000);
+      const res = await fetch("/api/payload/sponsors/fund", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-wallet-address": evmAddress,
+        },
+        body: JSON.stringify({
+          amount: amount.toString(),
+          transactionHash: hash,
+        }),
+      });
+
+      if (res.ok) {
+        await res.json();
+        setFundAmount("");
+        setIsFunding(false);
+        setTreasuryWallet("");
+        setFundingTransactionId("");
+        setShowFundModal(false);
+        loadData();
+        alert(`Funding successful! Transaction: ${hash}`);
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to complete funding");
+      }
+    } catch (error) {
+      console.error("Failed to complete funding:", error);
+      alert("Failed to complete funding");
+    }
+  };
+
+  const handleTransactionError = (error: APIError | Error) => {
+    console.error("Transaction failed:", error);
+    alert(`Transaction failed: ${error.message}`);
+    setIsFunding(false);
   };
 
   return (
@@ -902,7 +969,18 @@ export default function SponsorDashboard() {
       </Dialog>
 
       {/* Add Funds Modal */}
-      <Dialog open={showFundModal} onOpenChange={setShowFundModal}>
+      <Dialog
+        open={showFundModal}
+        onOpenChange={(open) => {
+          setShowFundModal(open);
+          if (!open) {
+            setIsFunding(false);
+            setTreasuryWallet("");
+            setFundingTransactionId("");
+            setFundAmount("");
+          }
+        }}
+      >
         <DialogContent className="max-w-md p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="text-2xl">Add Funds</DialogTitle>
@@ -922,75 +1000,155 @@ export default function SponsorDashboard() {
             </div>
 
             {/* Fund Form */}
-            <form onSubmit={handleFund} className="space-y-6">
-              <div className="space-y-3">
-                <div>
-                  <h3 className="text-base font-semibold mb-1">
-                    How much would you like to add?
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Enter the amount in USDC
-                  </p>
-                </div>
-
-                <div>
-                  <FormLabel className="text-sm font-medium">
-                    Amount (USDC)
-                  </FormLabel>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      value={fundAmount}
-                      onChange={(e) => setFundAmount(e.target.value)}
-                      placeholder="10.00"
-                      required
-                      className="flex-1"
-                    />
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      USDC
-                    </span>
+            {!isFunding ? (
+              <form onSubmit={handleFundInit} className="space-y-6">
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-base font-semibold mb-1">
+                      How much would you like to add?
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Enter the amount in USDC
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2 pl-1">
-                    Minimum: 0.01 USDC
-                  </p>
-                </div>
 
-                {/* Preview */}
-                {fundAmount && parseFloat(fundAmount) > 0 && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">
-                        New balance:
-                      </span>
-                      <span className="font-semibold">
-                        $
-                        {(
-                          parseFloat(balanceUSD) + parseFloat(fundAmount)
-                        ).toFixed(2)}{" "}
+                  <div>
+                    <FormLabel className="text-sm font-medium">
+                      Amount (USDC)
+                    </FormLabel>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={fundAmount}
+                        onChange={(e) => setFundAmount(e.target.value)}
+                        placeholder="10.00"
+                        required
+                        className="flex-1"
+                        disabled={isFunding}
+                      />
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
                         USDC
                       </span>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-2 pl-1">
+                      Minimum: 0.01 USDC
+                    </p>
                   </div>
-                )}
-              </div>
 
-              {/* Footer */}
-              <div className="flex gap-3 pt-4 border-t">
+                  {/* Preview */}
+                  {fundAmount && parseFloat(fundAmount) > 0 && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">
+                          New balance:
+                        </span>
+                        <span className="font-semibold">
+                          $
+                          {(
+                            parseFloat(balanceUSD) + parseFloat(fundAmount)
+                          ).toFixed(2)}{" "}
+                          USDC
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowFundModal(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isFunding}>
+                    Initialize Funding
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950">
+                  <p className="text-sm text-blue-900 dark:text-blue-100">
+                    Send {fundAmount} USDC to treasury wallet
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Treasury Wallet:
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 break-all font-mono">
+                        {treasuryWallet}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        USDC Contract:
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 break-all font-mono">
+                        {USDC_CONTRACT_ADDRESS}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <SendEvmTransactionButton
+                  account={evmAddress!}
+                  network="base-sepolia"
+                  onError={handleTransactionError}
+                  onSuccess={handleTransactionSuccess}
+                  pendingLabel="Sending transaction..."
+                  transaction={{
+                    to: USDC_CONTRACT_ADDRESS as `0x${string}`,
+                    value: 0n, // No native ETH sent for ERC20 transfers
+                    data: encodeFunctionData({
+                      abi: [
+                        {
+                          name: "transfer",
+                          type: "function",
+                          stateMutability: "nonpayable",
+                          inputs: [
+                            { name: "to", type: "address" },
+                            { name: "amount", type: "uint256" },
+                          ],
+                          outputs: [{ name: "", type: "bool" }],
+                        },
+                      ],
+                      functionName: "transfer",
+                      args: [
+                        treasuryWallet as `0x${string}`,
+                        parseUnits(fundAmount, 6), // USDC has 6 decimals
+                      ],
+                    }),
+                    chainId: 84_532, // Base Sepolia chain ID
+                    type: "eip1559",
+                  }}
+                >
+                  <button
+                    type="button"
+                    className={cn(buttonVariants({ className: "w-full" }))}
+                  >
+                    Send {fundAmount} USDC
+                  </button>
+                </SendEvmTransactionButton>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setShowFundModal(false)}
-                  className="flex-1"
+                  className="w-full"
+                  onClick={() => {
+                    setIsFunding(false);
+                    setTreasuryWallet("");
+                    setFundingTransactionId("");
+                  }}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1">
-                  Add Funds
-                </Button>
               </div>
-            </form>
+            )}
           </div>
         </DialogContent>
       </Dialog>

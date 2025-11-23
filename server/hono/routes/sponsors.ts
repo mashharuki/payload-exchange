@@ -34,18 +34,21 @@ sponsorsRouter.get("/actions", async (c) => {
 
   const actions = await getSponsorActions(sponsor.id);
   // Convert BigInt values to strings for JSON serialization
-  const serializedActions = actions.map((action) => ({
-    ...action,
-    max_redemption_price: action.max_redemption_price.toString(),
-    coveragePercent: action.coveragePercent?.toString(),
-    createdAt: action.createdAt.toISOString(),
-    redemptions: action.redemptions?.map((redemption) => ({
-      ...redemption,
-      sponsored_amount: redemption.sponsored_amount.toString(),
-      createdAt: redemption.createdAt.toISOString(),
-      completedAt: redemption.completedAt?.toISOString(),
-    })),
-  }));
+  const serializedActions = actions.map((action) => {
+    const { max_redemption_price, ...rest } = action;
+    return {
+      ...rest,
+      maxRedemptionPrice: max_redemption_price.toString(),
+      coveragePercent: action.coveragePercent?.toString(),
+      createdAt: action.createdAt.toISOString(),
+      redemptions: action.redemptions?.map((redemption) => ({
+        ...redemption,
+        sponsored_amount: redemption.sponsored_amount.toString(),
+        createdAt: redemption.createdAt.toISOString(),
+        completedAt: redemption.completedAt?.toISOString(),
+      })),
+    };
+  });
   return c.json({ actions: serializedActions });
 });
 
