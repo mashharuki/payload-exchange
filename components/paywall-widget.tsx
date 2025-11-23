@@ -193,7 +193,7 @@ export const PaywallWidget = ({
     } finally {
       setIsLoading(false);
     }
-  }, [resource, fetchWithPayment]);
+  }, [resource, fetchWithPayment, paymentResponse]);
 
   const handleActionClick = useCallback(
     async (action: Action) => {
