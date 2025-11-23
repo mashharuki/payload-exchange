@@ -32,14 +32,14 @@ const handler = createMcpHandler(async (server) => {
   const html = await getAppsSdkCompatibleHtml(APP_BASE_URL, "/");
 
   const contentWidget: ContentWidget = {
-    id: "show_content",
-    title: "Show Content",
+    id: "open_app",
+    title: "Open Payload.exchange App",
     templateUri: "ui://widget/content-template.html",
-    invoking: "Loading content...",
-    invoked: "Content loaded",
+    invoking: "Loading app...",
+    invoked: "App loaded",
     html,
-    description: "Displays the homepage content",
-    widgetDomain: "https://nextjs.org/docs",
+    description: "Displays Payload.exchange app",
+    widgetDomain: "https://payload.exchange",
   };
   server.registerResource(
     "content-widget",
