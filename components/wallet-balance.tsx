@@ -16,7 +16,6 @@ interface Balance {
 }
 
 export function WalletBalance() {
-  const [isInIframe, setIsInIframe] = useState(false);
   const [evmBalance, setEvmBalance] = useState<Balance>({
     value: 0n,
     formatted: "0",
@@ -34,10 +33,6 @@ export function WalletBalance() {
   const { evmAddress } = useEvmAddress();
   const { solanaAddress } = useSolanaAddress();
   const { isSignedIn } = useIsSignedIn();
-
-  useEffect(() => {
-    setIsInIframe(window.self !== window.top);
-  }, []);
 
   // Fetch EVM balance
   useEffect(() => {
@@ -156,7 +151,7 @@ export function WalletBalance() {
     return () => clearInterval(interval);
   }, [isSignedIn, solanaAddress]);
 
-  if (isInIframe || !isSignedIn) {
+  if (!isSignedIn) {
     return null;
   }
 

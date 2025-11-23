@@ -1,23 +1,12 @@
 "use client";
 
 import { useEvmAddress, useIsSignedIn } from "@coinbase/cdp-hooks";
-import { useEffect, useState } from "react";
 
 export function FundFaucet() {
-  const [isInIframe, setIsInIframe] = useState(false);
   const { evmAddress } = useEvmAddress();
   const { isSignedIn } = useIsSignedIn();
 
-  useEffect(() => {
-    setIsInIframe(window.self !== window.top);
-  }, []);
-
   if (!(isSignedIn && evmAddress)) {
-    return null;
-  }
-
-  // Don't render in iframe
-  if (isInIframe) {
     return null;
   }
 

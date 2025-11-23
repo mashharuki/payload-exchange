@@ -1,18 +1,16 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { FundFaucet } from "../components/fund-faucet";
-import { SendTransaction } from "../components/send-transaction";
-import { WalletAuth } from "../components/wallet-auth";
-import { WalletBalance } from "../components/wallet-balance";
+import { FundFaucet } from "@/components/fund-faucet";
+import { SendTransaction } from "@/components/send-transaction";
+import { WalletAuth } from "@/components/wallet-auth";
+import { WalletBalance } from "@/components/wallet-balance";
 import {
   useDisplayMode,
   useIsChatGptApp,
   useMaxHeight,
   useRequestDisplayMode,
   useWidgetProps,
-} from "../hooks";
+} from "@/hooks";
 
 export default function Home() {
   const toolOutput = useWidgetProps<{
@@ -62,7 +60,7 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <svg
                 aria-hidden="true"
-                className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+                className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -92,17 +90,6 @@ export default function Home() {
             </div>
           </div>
         )}
-        {/* Only show image when not in iframe to avoid 404 errors */}
-        {typeof window !== "undefined" && window.self === window.top && (
-          <Image
-            alt="Next.js logo"
-            className="dark:invert"
-            height={38}
-            priority
-            src="/next.svg"
-            width={180}
-          />
-        )}
         <ol className="list-inside list-decimal text-center font-mono text-sm/6 sm:text-left">
           <li className="mb-2 tracking-[-.01em]">
             Welcome to the ChatGPT Apps SDK Next.js Starter
@@ -124,23 +111,6 @@ export default function Home() {
               <FundFaucet />
               <SendTransaction />
             </div>
-          </div>
-          <div className="flex flex-col items-center gap-4 sm:flex-row">
-            <Link
-              className="flex h-10 items-center justify-center gap-2 rounded-full border border-transparent border-solid bg-foreground px-4 font-medium text-background text-sm transition-colors hover:bg-[#383838] sm:h-12 sm:w-auto sm:px-5 sm:text-base dark:hover:bg-[#ccc]"
-              href="/custom-page"
-              prefetch={false}
-            >
-              Visit another page
-            </Link>
-            <a
-              className="underline"
-              href="https://vercel.com/templates/ai/chatgpt-app-with-next-js"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              Deploy on Vercel
-            </a>
           </div>
         </div>
       </main>

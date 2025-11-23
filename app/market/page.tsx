@@ -225,8 +225,7 @@ export default function MarketPage() {
       resourcesData.forEach((resource) => {
         if (
           !(
-            resource &&
-            resource.metadata?.paymentAnalytics &&
+            resource?.metadata?.paymentAnalytics &&
             resource.accepts &&
             Array.isArray(resource.accepts)
           )
@@ -247,9 +246,9 @@ export default function MarketPage() {
             if (maxAmount < MIN_COST_THRESHOLD) return;
 
             if (budget >= maxAmount && maxAmount > 0) {
-              const analytics = resource.metadata!.paymentAnalytics!;
+              const analytics = resource?.metadata?.paymentAnalytics;
               const confidenceScore =
-                resource.metadata?.confidence?.overallScore || 0;
+                resource?.metadata?.confidence?.overallScore || 0;
 
               const marketQuality = calculateMarketQualityScore(
                 analytics,
@@ -273,11 +272,11 @@ export default function MarketPage() {
                 description:
                   accept.description || resource.metadata?.description || "",
                 maxAmountRequired: maxAmount,
-                totalTransactions: analytics.totalTransactions || 0,
-                totalUniqueUsers: analytics.totalUniqueUsers || 0,
+                totalTransactions: analytics?.totalTransactions || 0,
+                totalUniqueUsers: analytics?.totalUniqueUsers || 0,
                 averageDailyTransactions:
-                  analytics.averageDailyTransactions || 0,
-                transactionsMonth: analytics.transactionsMonth || 0,
+                  analytics?.averageDailyTransactions || 0,
+                transactionsMonth: analytics?.transactionsMonth || 0,
                 potentialReach: realisticReach,
                 theoreticalReach: Math.floor(budget / maxAmount),
                 marketQuality,

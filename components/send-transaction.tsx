@@ -6,20 +6,12 @@ import {
   useIsSignedIn,
 } from "@coinbase/cdp-hooks";
 import { SendEvmTransactionButton } from "@coinbase/cdp-react";
-import { useEffect, useState } from "react";
 
 export function SendTransaction() {
-  const [isInIframe, setIsInIframe] = useState(false);
-
   const { evmAddress } = useEvmAddress();
   const { isSignedIn } = useIsSignedIn();
 
-  useEffect(() => {
-    setIsInIframe(window.self !== window.top);
-  }, []);
-
-  // Don't render in iframe
-  if (isInIframe || !isSignedIn || !evmAddress) {
+  if (!isSignedIn || !evmAddress) {
     return null;
   }
 

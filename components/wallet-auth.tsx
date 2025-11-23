@@ -19,7 +19,7 @@ export const WalletAuth = () => {
           <div className="flex items-center gap-3">
             <svg
               aria-hidden="true"
-              className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400"
+              className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -66,7 +66,7 @@ export const WalletAuth = () => {
         <div className="flex items-center gap-3">
           <svg
             aria-hidden="true"
-            className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400"
+            className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
