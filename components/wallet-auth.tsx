@@ -3,37 +3,50 @@
 import {
   useEvmAddress,
   useIsSignedIn,
+  useSignOut,
   useSolanaAddress,
 } from "@coinbase/cdp-hooks";
 import { AuthButton } from "@coinbase/cdp-react/components/AuthButton";
+import { Button } from "@/components/ui/button";
 
 export const WalletAuth = () => {
   const { isSignedIn } = useIsSignedIn();
   const { evmAddress } = useEvmAddress();
   const { solanaAddress } = useSolanaAddress();
+  const { signOut } = useSignOut();
 
   if (isSignedIn) {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-800 dark:bg-green-950">
-          <div className="flex items-center gap-3">
-            <svg
-              aria-hidden="true"
-              className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                clipRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                fillRule="evenodd"
-              />
-            </svg>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-green-900 text-sm dark:text-green-100">
-                Welcome! You&apos;re signed in.
-              </p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  clipRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                  fillRule="evenodd"
+                />
+              </svg>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-green-900 text-sm dark:text-green-100">
+                  Welcome! You&apos;re signed in.
+                </p>
+              </div>
             </div>
+            <Button
+              onClick={signOut}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+            >
+              Sign Out
+            </Button>
           </div>
         </div>
         {evmAddress && (

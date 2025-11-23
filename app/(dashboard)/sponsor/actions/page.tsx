@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  useEvmAddress,
+  useIsSignedIn,
+  useSignOut,
+} from "@coinbase/cdp-hooks";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { WalletAuth } from "@/components/wallet-auth";
 
 interface Action {
   id: string;
@@ -39,10 +45,14 @@ interface Plugin {
 }
 
 export default function SponsorActionsPage() {
+  const { isSignedIn } = useIsSignedIn();
+  const { evmAddress } = useEvmAddress();
+  const { signOut } = useSignOut();
   const [actions, setActions] = useState<Action[]>([]);
   const [plugins, setPlugins] = useState<Plugin[]>([]);
   const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [balance, setBalance] = useState<string>("0");
   const [formData, setFormData] = useState({
     pluginId: "",
     coverageType: "full" as "full" | "percent",
@@ -81,11 +91,27 @@ export default function SponsorActionsPage() {
     });
   };
 
+  const loadBalance = useCallback(async () => {
+    if (!evmAddress) return;
+    try {
+      const res = await fetch("/api/payload/sponsors/analytics", {
+        headers: {
+          "x-wallet-address": evmAddress,
+        },
+      });
+      const data = await res.json();
+      setBalance(data.balance || "0");
+    } catch (error) {
+      console.error("Failed to load balance:", error);
+    }
+  }, [evmAddress]);
+
   const loadActions = useCallback(async () => {
+    if (!evmAddress) return;
     try {
       const res = await fetch("/api/payload/sponsors/actions", {
         headers: {
-          "x-wallet-address": "0x0000000000000000000000000000000000000000", // TODO: Get from wallet
+          "x-wallet-address": evmAddress,
         },
       });
       const data = await res.json();
@@ -93,21 +119,25 @@ export default function SponsorActionsPage() {
     } catch (error) {
       console.error("Failed to load actions:", error);
     }
-  }, []);
+  }, [evmAddress]);
 
   useEffect(() => {
     loadPlugins();
-    loadActions();
-  }, [loadPlugins, loadActions]);
+    if (evmAddress) {
+      loadActions();
+      loadBalance();
+    }
+  }, [loadPlugins, loadActions, loadBalance, evmAddress]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!evmAddress) return;
     try {
       const res = await fetch("/api/payload/sponsors/actions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-wallet-address": "0x0000000000000000000000000000000000000000", // TODO: Get from wallet
+          "x-wallet-address": evmAddress,
         },
         body: JSON.stringify({
           ...formData,
@@ -116,6 +146,7 @@ export default function SponsorActionsPage() {
               ? formData.coveragePercent
               : undefined,
           config: formData.config,
+          max_redemption_price: "1000000", // 1 USDC default
         }),
       });
 
@@ -130,9 +161,14 @@ export default function SponsorActionsPage() {
           config: {},
         });
         loadActions();
+        loadBalance();
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to create action");
       }
     } catch (error) {
       console.error("Failed to create action:", error);
+      alert("Failed to create action");
     }
   };
 
@@ -288,14 +324,83 @@ export default function SponsorActionsPage() {
     );
   };
 
+  if (!isSignedIn || !evmAddress) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Actions</h1>
+        <Card>
+          <CardContent className="pt-6">
+            <WalletAuth />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const balanceUSD = (BigInt(balance) / BigInt(1_000_000)).toString();
+  const hasBalance = BigInt(balance) > 0n;
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Actions</h1>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancel" : "Create Action"}
-        </Button>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Actions</h1>
+          <div className="mt-2">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Wallet Address:
+            </p>
+            <p className="text-sm font-mono text-slate-900 dark:text-slate-100 break-all">
+              {evmAddress}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Button onClick={signOut} variant="outline" size="sm">
+            Sign Out
+          </Button>
+          <div className="text-right">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Balance
+            </p>
+            <p className="text-lg font-semibold">${balanceUSD} USDC</p>
+          </div>
+          <Button onClick={() => setShowForm(!showForm)} disabled={!hasBalance}>
+            {showForm ? "Cancel" : "Create Action"}
+          </Button>
+        </div>
       </div>
+
+      {!hasBalance && (
+        <Card className="mb-8 border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  clipRule="evenodd"
+                  d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                  fillRule="evenodd"
+                />
+              </svg>
+              <div>
+                <p className="font-medium text-yellow-900 text-sm dark:text-yellow-100">
+                  Insufficient Balance
+                </p>
+                <p className="text-yellow-700 text-sm dark:text-yellow-300 mt-1">
+                  You need to fund your account before creating actions.{" "}
+                  <a href="/sponsor/billing" className="underline">
+                    Go to Billing
+                  </a>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {showForm && (
         <Card className="mb-8">
@@ -392,7 +497,6 @@ export default function SponsorActionsPage() {
                   </SelectContent>
                 </Select>
               </div>
-
 
               <Button type="submit">Create Action</Button>
             </form>

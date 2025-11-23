@@ -1,11 +1,13 @@
 import { Hono } from "hono";
+import { TREASURY_WALLET_ADDRESS } from "@/lib/config";
 import { getPlugin, listPlugins } from "@/server/core/actions/registry";
-import { payX402 } from "@/server/core/x402/client";
 import {
   createAction,
+  createFundingTransaction,
   createSponsor,
   getSponsorActions,
   getSponsorByWallet,
+  updateFundingTransactionStatus,
   updateSponsorBalance,
 } from "@/server/db/queries";
 
@@ -59,6 +61,14 @@ sponsorsRouter.post("/actions", async (c) => {
     return c.json({ error: "Failed to create sponsor" }, 500);
   }
 
+  // Check balance before creating action
+  if (sponsor.balance <= 0n) {
+    return c.json(
+      { error: "Insufficient balance. Please fund your account first." },
+      400,
+    );
+  }
+
   const actionId = await createAction({
     sponsorId: sponsor.id,
     pluginId: body.pluginId,
@@ -83,6 +93,7 @@ sponsorsRouter.post("/fund", async (c) => {
     amount: string; // bigint as string
     currency?: string;
     network?: string;
+    transactionHash?: string; // Optional: if transaction already sent from client
   }>();
 
   let sponsor = await getSponsorByWallet(walletAddress);
@@ -95,33 +106,44 @@ sponsorsRouter.post("/fund", async (c) => {
     return c.json({ error: "Failed to create sponsor" }, 500);
   }
 
-  // In a real implementation, this would:
-  // 1. Create x402 payment request
-  // 2. User pays via wallet
-  // 3. Verify payment
-  // 4. Credit sponsor balance
-
   const amount = BigInt(body.amount);
-  const paymentResult = await payX402({
+  const treasuryWallet = TREASURY_WALLET_ADDRESS;
+
+  // Create funding transaction record
+  const fundingTransactionId = await createFundingTransaction({
+    sponsorId: sponsor.id,
     amount,
-    currency: body.currency || "USDC:base",
-    network: body.network || "base",
+    treasuryWallet,
+    transactionHash: body.transactionHash,
   });
 
-  if (!paymentResult.success) {
-    return c.json(
-      { error: "Payment failed", reason: paymentResult.error },
-      400,
+  // If transaction hash is provided (client-side transaction), mark as completed
+  if (body.transactionHash) {
+    await updateFundingTransactionStatus(
+      fundingTransactionId,
+      "completed",
+      body.transactionHash,
     );
+    // Credit sponsor balance
+    await updateSponsorBalance(sponsor.id, amount);
+
+    const updatedSponsor = await getSponsorByWallet(walletAddress);
+    return c.json({
+      success: true,
+      transactionHash: body.transactionHash,
+      fundingTransactionId,
+      newBalance: updatedSponsor?.balance.toString() || "0",
+    });
   }
 
-  // Credit sponsor balance
-  await updateSponsorBalance(sponsor.id, amount);
-
+  // Otherwise, return the funding transaction ID for client to send transaction
+  // The client will send the transaction and then call this endpoint again with transactionHash
   return c.json({
     success: true,
-    transactionHash: paymentResult.transactionHash,
-    newBalance: (sponsor.balance + amount).toString(),
+    fundingTransactionId,
+    treasuryWallet,
+    amount: amount.toString(),
+    message: "Please send transaction to treasury wallet",
   });
 });
 

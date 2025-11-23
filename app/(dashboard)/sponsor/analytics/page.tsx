@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  useEvmAddress,
+  useIsSignedIn,
+  useSignOut,
+} from "@coinbase/cdp-hooks";
+import { WalletAuth } from "@/components/wallet-auth";
 
 interface Analytics {
   balance: string;
@@ -11,13 +18,17 @@ interface Analytics {
 }
 
 export default function SponsorAnalyticsPage() {
+  const { isSignedIn } = useIsSignedIn();
+  const { evmAddress } = useEvmAddress();
+  const { signOut } = useSignOut();
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
 
   const loadAnalytics = useCallback(async () => {
+    if (!evmAddress) return;
     try {
       const res = await fetch("/api/payload/sponsors/analytics", {
         headers: {
-          "x-wallet-address": "0x0000000000000000000000000000000000000000", // TODO: Get from wallet
+          "x-wallet-address": evmAddress,
         },
       });
       const data = await res.json();
@@ -25,11 +36,26 @@ export default function SponsorAnalyticsPage() {
     } catch (error) {
       console.error("Failed to load analytics:", error);
     }
-  }, []);
+  }, [evmAddress]);
 
   useEffect(() => {
-    loadAnalytics();
-  }, [loadAnalytics]);
+    if (evmAddress) {
+      loadAnalytics();
+    }
+  }, [loadAnalytics, evmAddress]);
+
+  if (!isSignedIn || !evmAddress) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Analytics</h1>
+        <Card>
+          <CardContent className="pt-6">
+            <WalletAuth />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!analytics) {
     return <div className="container mx-auto px-4 py-8">Loading...</div>;
@@ -42,7 +68,22 @@ export default function SponsorAnalyticsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Analytics</h1>
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Analytics</h1>
+          <div className="mt-2">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Wallet Address:
+            </p>
+            <p className="text-sm font-mono text-slate-900 dark:text-slate-100 break-all">
+              {evmAddress}
+            </p>
+          </div>
+        </div>
+        <Button onClick={signOut} variant="outline">
+          Sign Out
+        </Button>
+      </div>
 
       <div className="grid md:grid-cols-4 gap-6">
         <Card>

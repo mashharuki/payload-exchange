@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "./client";
-import { actions, redemptions, sponsors } from "./schema";
+import { actions, redemptions, sponsors, fundingTransactions } from "./schema";
 
 export async function getActionForResourceAndUser(userId: string) {
   // Find any available action that:
@@ -151,4 +151,46 @@ export async function createAction(params: {
     coveragePercent: params.coveragePercent ?? null,
   });
   return id;
+}
+
+export async function createFundingTransaction(params: {
+  sponsorId: string;
+  amount: bigint;
+  treasuryWallet: string;
+  transactionHash?: string;
+}) {
+  const id = crypto.randomUUID();
+  await db.insert(fundingTransactions).values({
+    id,
+    sponsorId: params.sponsorId,
+    amount: params.amount,
+    treasuryWallet: params.treasuryWallet,
+    transactionHash: params.transactionHash ?? null,
+    status: "pending",
+  });
+  return id;
+}
+
+export async function updateFundingTransactionStatus(
+  fundingTransactionId: string,
+  status: "pending" | "completed" | "failed",
+  transactionHash?: string,
+) {
+  await db
+    .update(fundingTransactions)
+    .set({
+      status,
+      transactionHash: transactionHash ?? undefined,
+      completedAt: status === "completed" || status === "failed" ? new Date() : undefined,
+    })
+    .where(eq(fundingTransactions.id, fundingTransactionId));
+}
+
+export async function getFundingTransaction(fundingTransactionId: string) {
+  return db.query.fundingTransactions.findFirst({
+    where: eq(fundingTransactions.id, fundingTransactionId),
+    with: {
+      sponsor: true,
+    },
+  });
 }
