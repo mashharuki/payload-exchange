@@ -38,7 +38,6 @@ export const actions = pgTable("actions", {
   coverageType: coverageTypeEnum("coverage_type").notNull(),
   coveragePercent: bigint("coverage_percent", { mode: "number" }),
   recurrence: recurrenceEnum("recurrence").notNull(),
-  resourceId: varchar("resource_id", { length: 500 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

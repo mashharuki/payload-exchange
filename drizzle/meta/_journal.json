@@ -8,6 +8,13 @@
       "when": 1763856722699,
       "tag": "0000_vengeful_doctor_octopus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763867389112,
+      "tag": "0001_glossy_champions",
+      "breakpoints": true
     }
   ]
 }

@@ -342,8 +342,8 @@ async function proxyHandler(c: Context) {
         });
       }
 
-      // Try to find an action for this resource and user
-      const action = await getActionForResourceAndUser(resourceId, userId);
+      // Try to find an action for this user
+      const action = await getActionForResourceAndUser(userId);
 
       if (!action) {
         // No sponsor available, return 402 with challenge info

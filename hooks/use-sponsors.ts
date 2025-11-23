@@ -9,7 +9,6 @@ interface Sponsor {
 interface Action {
   id: string;
   pluginId: string;
-  resourceId: string;
   coverageType: "full" | "percent";
   coveragePercent?: number;
   recurrence: "one_time_per_user" | "per_request";

@@ -25,7 +25,6 @@ import { Textarea } from "@/components/ui/textarea";
 interface Action {
   id: string;
   pluginId: string;
-  resourceId: string;
   coverageType: "full" | "percent";
   coveragePercent?: number;
   recurrence: "one_time_per_user" | "per_request";
@@ -46,7 +45,6 @@ export default function SponsorActionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     pluginId: "",
-    resourceId: "",
     coverageType: "full" as "full" | "percent",
     coveragePercent: 100,
     recurrence: "one_time_per_user" as "one_time_per_user" | "per_request",
@@ -126,7 +124,6 @@ export default function SponsorActionsPage() {
         setSelectedPlugin(null);
         setFormData({
           pluginId: "",
-          resourceId: "",
           coverageType: "full",
           coveragePercent: 100,
           recurrence: "one_time_per_user",
@@ -341,17 +338,6 @@ export default function SponsorActionsPage() {
               )}
 
               <div>
-                <Label>Resource ID</Label>
-                <Input
-                  value={formData.resourceId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, resourceId: e.target.value })
-                  }
-                  placeholder="https://api.example.com/endpoint"
-                />
-              </div>
-
-              <div>
                 <Label>Coverage Type</Label>
                 <Select
                   value={formData.coverageType}
@@ -423,7 +409,6 @@ export default function SponsorActionsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Plugin</TableHead>
-                <TableHead>Resource</TableHead>
                 <TableHead>Coverage</TableHead>
                 <TableHead>Recurrence</TableHead>
               </TableRow>
@@ -432,9 +417,6 @@ export default function SponsorActionsPage() {
               {actions.map((action) => (
                 <TableRow key={action.id}>
                   <TableCell>{action.pluginId}</TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {action.resourceId}
-                  </TableCell>
                   <TableCell>
                     {action.coverageType === "full"
                       ? "100%"

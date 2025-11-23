@@ -1,0 +1,1 @@
+ALTER TABLE "actions" DROP COLUMN "resource_id";

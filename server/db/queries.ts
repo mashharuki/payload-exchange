@@ -2,15 +2,11 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "./client";
 import { actions, redemptions, sponsors } from "./schema";
 
-export async function getActionForResourceAndUser(
-  resourceId: string,
-  userId: string,
-) {
-  // Find an action for this resource that:
+export async function getActionForResourceAndUser(userId: string) {
+  // Find any available action that:
   // 1. Has a sponsor with sufficient balance
   // 2. User hasn't redeemed yet (if one_time_per_user)
   const action = await db.query.actions.findFirst({
-    where: eq(actions.resourceId, resourceId),
     with: {
       sponsor: true,
       redemptions: {
@@ -19,6 +15,7 @@ export async function getActionForResourceAndUser(
         limit: 1,
       },
     },
+    orderBy: desc(actions.createdAt),
   });
 
   if (!action) return null;
@@ -144,7 +141,6 @@ export async function createAction(params: {
   coverageType: "full" | "percent";
   coveragePercent?: number;
   recurrence: "one_time_per_user" | "per_request";
-  resourceId: string;
 }) {
   const id = crypto.randomUUID();
   await db.insert(actions).values({
