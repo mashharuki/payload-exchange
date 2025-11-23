@@ -46,6 +46,7 @@ sponsorsRouter.get("/actions", async (c) => {
         sponsored_amount: redemption.sponsored_amount.toString(),
         createdAt: redemption.createdAt.toISOString(),
         completedAt: redemption.completedAt?.toISOString(),
+        metadata: redemption.metadata || undefined,
       })),
     };
   });

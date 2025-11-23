@@ -75,6 +75,7 @@ export async function createRedemption(params: {
   resourceId: string;
   instanceId: string;
   sponsored_amount: bigint;
+  metadata?: Record<string, unknown>;
 }) {
   const id = crypto.randomUUID();
   await db.insert(redemptions).values({
@@ -156,14 +157,8 @@ export async function createAction(params: {
   return id;
 }
 
-export async function updateActionStatus(
-  actionId: string,
-  active: boolean,
-) {
-  await db
-    .update(actions)
-    .set({ active })
-    .where(eq(actions.id, actionId));
+export async function updateActionStatus(actionId: string, active: boolean) {
+  await db.update(actions).set({ active }).where(eq(actions.id, actionId));
 }
 
 export async function createFundingTransaction(params: {

@@ -57,8 +57,12 @@ interface Action {
   createdAt?: string;
   config?: Record<string, any>;
   redemptions: Array<{
+    id: string;
     status: string;
     sponsored_amount: string;
+    createdAt: string;
+    completedAt?: string;
+    metadata?: Record<string, unknown>;
   }>;
 }
 
@@ -1658,6 +1662,182 @@ export default function SponsorDashboard() {
                             </div>
                           ),
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Redemptions with Metadata */}
+                {selectedCampaign.redemptions &&
+                  selectedCampaign.redemptions.length > 0 && (
+                    <div className="space-y-4">
+                      <h3 className="text-base font-semibold text-white border-b border-gray-800 pb-2">
+                        Redemptions ({selectedCampaign.redemptions.length})
+                      </h3>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {selectedCampaign.redemptions.map((redemption) => (
+                          <div
+                            key={redemption.id}
+                            className="bg-gray-800 p-4 rounded-none border border-gray-700"
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <p className="text-sm font-medium text-white">
+                                  Status:{" "}
+                                  <span
+                                    className={
+                                      redemption.status === "completed"
+                                        ? "text-green-400"
+                                        : redemption.status === "failed"
+                                          ? "text-red-400"
+                                          : "text-yellow-400"
+                                    }
+                                  >
+                                    {redemption.status}
+                                  </span>
+                                </p>
+                                <p className="text-xs text-white/70 mt-1">
+                                  Amount: $
+                                  {(
+                                    Number(redemption.sponsored_amount || "0") /
+                                    1_000_000
+                                  ).toFixed(2)}{" "}
+                                  USDC
+                                </p>
+                                <p className="text-xs text-white/70">
+                                  Created:{" "}
+                                  {new Date(
+                                    redemption.createdAt,
+                                  ).toLocaleString()}
+                                </p>
+                                {redemption.completedAt && (
+                                  <p className="text-xs text-white/70">
+                                    Completed:{" "}
+                                    {new Date(
+                                      redemption.completedAt,
+                                    ).toLocaleString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {redemption.metadata && (
+                              <div className="mt-3 pt-3 border-t border-gray-700">
+                                <p className="text-xs font-medium text-white/70 mb-2">
+                                  Metadata
+                                </p>
+                                <div className="space-y-2 text-xs">
+                                  {(() => {
+                                    const url = redemption.metadata.requestUrl;
+                                    if (typeof url === "string") {
+                                      return (
+                                        <div>
+                                          <span className="text-white/70">
+                                            URL:{" "}
+                                          </span>
+                                          <span className="text-white break-all">
+                                            {url}
+                                          </span>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                  {(() => {
+                                    const method =
+                                      redemption.metadata.httpMethod;
+                                    if (typeof method === "string") {
+                                      return (
+                                        <div>
+                                          <span className="text-white/70">
+                                            Method:{" "}
+                                          </span>
+                                          <span className="text-white">
+                                            {method}
+                                          </span>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                  {(() => {
+                                    const challenge =
+                                      redemption.metadata.challenge;
+                                    if (
+                                      challenge &&
+                                      typeof challenge === "object" &&
+                                      challenge !== null &&
+                                      !Array.isArray(challenge)
+                                    ) {
+                                      const challengeObj = challenge as Record<
+                                        string,
+                                        unknown
+                                      >;
+                                      return (
+                                        <div>
+                                          <span className="text-white/70">
+                                            Challenge:{" "}
+                                          </span>
+                                          <div className="ml-4 mt-1 space-y-1">
+                                            {typeof challengeObj.amount ===
+                                              "string" && (
+                                              <div>
+                                                <span className="text-white/70">
+                                                  Amount:{" "}
+                                                </span>
+                                                <span className="text-white">
+                                                  {challengeObj.amount}
+                                                </span>
+                                              </div>
+                                            )}
+                                            {typeof challengeObj.currency ===
+                                              "string" && (
+                                              <div>
+                                                <span className="text-white/70">
+                                                  Currency:{" "}
+                                                </span>
+                                                <span className="text-white">
+                                                  {challengeObj.currency}
+                                                </span>
+                                              </div>
+                                            )}
+                                            {typeof challengeObj.description ===
+                                              "string" && (
+                                              <div>
+                                                <span className="text-white/70">
+                                                  Description:{" "}
+                                                </span>
+                                                <span className="text-white">
+                                                  {challengeObj.description}
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                  {(() => {
+                                    const userAgent =
+                                      redemption.metadata.userAgent;
+                                    if (typeof userAgent === "string") {
+                                      return (
+                                        <div>
+                                          <span className="text-white/70">
+                                            User Agent:{" "}
+                                          </span>
+                                          <span className="text-white break-all">
+                                            {userAgent}
+                                          </span>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

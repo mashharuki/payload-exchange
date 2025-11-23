@@ -61,6 +61,7 @@ export const redemptions = pgTable("redemptions", {
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
   status: actionStatusEnum("status").notNull().default("pending"),
   sponsored_amount: bigint("sponsored_amount", { mode: "bigint" }).notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
 });
