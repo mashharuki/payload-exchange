@@ -38,7 +38,8 @@ export const actions = pgTable("actions", {
   coverageType: coverageTypeEnum("coverage_type").notNull(),
   coveragePercent: bigint("coverage_percent", { mode: "number" }),
   recurrence: recurrenceEnum("recurrence").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  max_redemption_price: bigint("max_redemption_price", { mode: "bigint" }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),  
 });
 
 export const redemptions = pgTable("redemptions", {
@@ -50,6 +51,7 @@ export const redemptions = pgTable("redemptions", {
   resourceId: varchar("resource_id", { length: 500 }).notNull(),
   instanceId: varchar("instance_id", { length: 255 }).notNull(),
   status: actionStatusEnum("status").notNull().default("pending"),
+  sponsored_amount: bigint("sponsored_amount", { mode: "bigint" }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
 });
