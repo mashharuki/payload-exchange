@@ -33,6 +33,75 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              /* Force CDP modal to appear above everything */
+              body > div[data-radix-portal],
+              body > div[data-radix-portal] > div,
+              [data-radix-portal],
+              [data-radix-portal] > div,
+              [data-radix-portal] > div > div,
+              div[role="dialog"],
+              div[aria-modal="true"],
+              body > div[style*="position: fixed"],
+              body > div[style*="position:fixed"] {
+                z-index: 99999 !important;
+              }
+            `,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                // Function to set high z-index on modal elements
+                function setModalZIndex() {
+                  // Target all possible modal containers
+                  const selectors = [
+                    '[data-radix-portal]',
+                    '[data-radix-portal] > div',
+                    '[role="dialog"]',
+                    '[aria-modal="true"]',
+                    'body > div[style*="position: fixed"]',
+                    'body > div[style*="position:fixed"]'
+                  ];
+                  
+                  selectors.forEach(selector => {
+                    try {
+                      const elements = document.querySelectorAll(selector);
+                      elements.forEach(el => {
+                        if (el instanceof HTMLElement) {
+                          el.style.zIndex = '99999';
+                        }
+                      });
+                    } catch (e) {
+                      // Ignore selector errors
+                    }
+                  });
+                }
+                
+                // Set z-index immediately
+                setModalZIndex();
+                
+                // Watch for new modal elements being added
+                const observer = new MutationObserver(() => {
+                  setModalZIndex();
+                });
+                
+                observer.observe(document.body, {
+                  childList: true,
+                  subtree: true,
+                  attributes: true,
+                  attributeFilter: ['style', 'data-radix-portal', 'role', 'aria-modal']
+                });
+                
+                // Also check periodically as a fallback
+                setInterval(setModalZIndex, 100);
+              })();
+            `,
+          }}
+        />
         <AppsSDKUIProvider>
           <CDPProvider>{children}</CDPProvider>
         </AppsSDKUIProvider>

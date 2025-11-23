@@ -25,8 +25,8 @@ export default function Hero() {
   }
 
   return (
-    <section className="hero-section relative flex items-center min-h-[calc(100vh-80px)] overflow-x-hidden">
-      <div className="absolute right-0 md:right-1/12 lg:right-1/10 top-1/2 -translate-y-1/2 flex items-center justify-center rotate-90 scale-150">
+    <section className="hero-section relative z-0 flex items-center min-h-[calc(100vh-80px)] overflow-x-hidden">
+      <div className="absolute right-0 md:right-1/12 lg:right-1/10 top-1/2 -translate-y-1/2 flex items-center justify-center rotate-90 scale-150 z-0">
         <AsciiHero
           textColor="#EB7D32"
           bgColor="transparent"
@@ -34,7 +34,7 @@ export default function Hero() {
           asciiStyle={asciiStyle}
         />
       </div>
-      <div className="relative z-10 w-full px-8 md:px-16 -mt-80 md:mt-0">
+      <div className="relative z-0 w-full px-8 md:px-16 -mt-80 md:mt-0">
         <h1 className="geist text-6xl md:text-6xl lg:text-7xl xl:text-8xl font-[500] text-white leading-none">
           Accept any{" "}
           <span
