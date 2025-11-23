@@ -19,9 +19,9 @@ export function CDPProvider({ children }: { children: ReactNode }) {
         },
         solana: {
           // Create a Solana account on login
-          createOnLogin: true,
+          createOnLogin: false,
         },
-        appName: "ChatGPT Apps SDK Next.js Starter",
+        appName: "Payload.exchange",
       }}
     >
       {children}
