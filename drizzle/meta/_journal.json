@@ -36,6 +36,13 @@
       "when": 1763872290348,
       "tag": "0004_fixed_wilson_fisk",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1763876772397,
+      "tag": "0005_furry_doomsday",
+      "breakpoints": true
     }
   ]
 }

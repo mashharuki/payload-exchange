@@ -41,6 +41,7 @@ interface Action {
     sponsored_amount: string;
     createdAt: string;
     completedAt?: string;
+    metadata?: Record<string, unknown>;
   }>;
 }
 
@@ -185,19 +186,25 @@ export default function SponsorActionsPage() {
     }
   };
 
-  const handleToggleAction = async (actionId: string, currentStatus: boolean) => {
+  const handleToggleAction = async (
+    actionId: string,
+    currentStatus: boolean,
+  ) => {
     if (!evmAddress) return;
     try {
-      const res = await fetch(`/api/payload/sponsors/actions/${actionId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-wallet-address": evmAddress,
+      const res = await fetch(
+        `/api/payload/sponsors/actions/${actionId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-wallet-address": evmAddress,
+          },
+          body: JSON.stringify({
+            active: !currentStatus,
+          }),
         },
-        body: JSON.stringify({
-          active: !currentStatus,
-        }),
-      });
+      );
 
       if (res.ok) {
         loadActions();
@@ -609,7 +616,8 @@ export default function SponsorActionsPage() {
                       ) || 0n;
                   const spentUSD = (Number(totalSpent) / 1_000_000).toFixed(2);
                   const maxPriceUSD = (
-                    Number(BigInt(action.max_redemption_price || "0")) / 1_000_000
+                    Number(BigInt(action.max_redemption_price || "0")) /
+                    1_000_000
                   ).toFixed(2);
 
                   return (

@@ -1,0 +1,1 @@
+ALTER TABLE "redemptions" ADD COLUMN "metadata" jsonb;

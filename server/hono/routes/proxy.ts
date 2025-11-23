@@ -414,12 +414,35 @@ async function proxyHandler(c: Context) {
 
       // Save redemption instance
       const { createRedemption } = await import("@/server/db/queries");
+
+      // Capture metadata for sponsor visibility
+      const metadata: Record<string, unknown> = {
+        requestUrl: targetUrl.toString(),
+        httpMethod: method,
+        challenge: {
+          amount: challenge.amount.toString(),
+          currency: challenge.currency,
+          network: challenge.network,
+          scheme: challenge.scheme,
+          resource: challenge.resource,
+          ...(challenge.description && { description: challenge.description }),
+          ...(challenge.mimeType && { mimeType: challenge.mimeType }),
+        },
+        coverage: {
+          sponsorContribution: sponsorContribution.toString(),
+          userContribution: userContribution.toString(),
+        },
+        userAgent: c.req.header("user-agent") || undefined,
+        referer: c.req.header("referer") || undefined,
+      };
+
       await createRedemption({
         actionId: action.id,
         userId,
         resourceId,
         instanceId: startResult.instanceId,
         sponsored_amount: sponsorContribution,
+        metadata,
       });
 
       return c.json({
