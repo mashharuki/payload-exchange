@@ -147,8 +147,6 @@ export const PaywallWidget = ({
     setError(null);
 
     try {
-      // If we have a payment response from a previous step, include it in the headers
-      const headers: Record<string, string> = {};
       if (
         paymentResponse &&
         typeof paymentResponse === "object" &&
@@ -322,6 +320,7 @@ export const PaywallWidget = ({
         onActionsChange?.(updatedActions);
       }
     } catch (error) {
+      console.error("Error refreshing actions", error);
       // Silently handle errors - user can retry if needed
     } finally {
       setIsRefreshingActions(false);
@@ -358,6 +357,7 @@ export const PaywallWidget = ({
           );
         }
       } catch (error) {
+        console.error("Error validating action", error);
         alert("Failed to validate action. Please try again.");
       }
     },
