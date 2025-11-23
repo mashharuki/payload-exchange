@@ -1,6 +1,6 @@
 "use client";
 
-import { useEvmAddress, useIsSignedIn, useX402 } from "@coinbase/cdp-hooks";
+import { useIsSignedIn, useX402 } from "@coinbase/cdp-hooks";
 import { ChevronDown, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";

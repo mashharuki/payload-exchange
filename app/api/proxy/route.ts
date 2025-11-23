@@ -1,5 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "*",
+};
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const targetUrl = url.searchParams.get("url");
@@ -7,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!targetUrl) {
     return NextResponse.json(
       { error: "Missing 'url' query parameter" },
-      { status: 400 },
+      { status: 400, headers: corsHeaders },
     );
   }
 
@@ -69,13 +75,6 @@ export async function GET(req: NextRequest) {
     // Prepare downstream response
     const responseHeaders = new Headers();
 
-    // Forward important response headers
-    const headersToForward = [
-      "content-type",
-      "www-authenticate",
-      "x-payment-required", // specific x402 headers if any
-    ];
-
     response.headers.forEach((value, key) => {
       // Forward all headers except some blocklisted ones usually, but for simplicity/debug lets forward most things
       // especially those related to 402 flows
@@ -88,6 +87,11 @@ export async function GET(req: NextRequest) {
       }
     });
 
+    // Add CORS headers
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      responseHeaders.set(key, value);
+    });
+
     return new NextResponse(body, {
       status: response.status,
       headers: responseHeaders,
@@ -96,7 +100,12 @@ export async function GET(req: NextRequest) {
     console.error("[Proxy] Error fetching upstream:", error);
     return NextResponse.json(
       { error: "Failed to fetch upstream resource", details: String(error) },
-      { status: 502 },
+      { status: 502, headers: corsHeaders },
     );
   }
 }
+
+// enable CORS for all origins, methods, and headers
+export const OPTIONS = async () => {
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+};
