@@ -1,25 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/lib/ui/badge";
+import { Button } from "@/lib/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/lib/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@/lib/ui/dialog";
+import { Input } from "@/lib/ui/input";
+import { Label } from "@/lib/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+} from "@/lib/ui/select";
+import { Slider } from "@/lib/ui/slider";
 import {
   Table,
   TableBody,
@@ -27,9 +27,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/lib/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/lib/ui/tabs";
+import { Textarea } from "@/lib/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface Resource {
@@ -116,11 +116,7 @@ export default function MarketPage() {
   const scatterChartRef = useRef<HTMLCanvasElement>(null);
 
   // Load resources data
-  useEffect(() => {
-    loadResources();
-  }, []);
-
-  const loadResources = async () => {
+  const loadResources = useCallback(async () => {
     setStatusText("Loading resources...");
     try {
       const response = await fetch("/resources.json");
@@ -136,7 +132,11 @@ export default function MarketPage() {
       setResourcesLoaded(false);
       setStatusText(`Error: ${error.message}`);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadResources();
+  }, [loadResources]);
 
   // Convert smallest unit to USD (assuming USDC with 6 decimals)
   const toUSD = (amount: string) => Number.parseInt(amount) / 1_000_000;
