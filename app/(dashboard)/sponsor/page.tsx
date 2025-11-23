@@ -254,9 +254,11 @@ export default function SponsorDashboard() {
     );
   }
 
-  const balanceUSD = (BigInt(analytics.balance) / BigInt(1_000_000)).toString();
+  const balanceUSD = (
+    BigInt(analytics?.balance || "0") / BigInt(1_000_000)
+  ).toString();
   const totalSpentUSD = (
-    BigInt(analytics.totalSpent) / BigInt(1_000_000)
+    BigInt(analytics?.totalSpent || "0") / BigInt(1_000_000)
   ).toString();
 
   const getPluginName = (pluginId: string) => {

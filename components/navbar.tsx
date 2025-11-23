@@ -1,14 +1,9 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import {
-  useIsSignedIn,
-  useSignOut,
-  useEvmAddress,
-} from "@coinbase/cdp-hooks"
-import { AuthButton } from "@coinbase/cdp-react/components/AuthButton"
+import { useEvmAddress, useIsSignedIn, useSignOut } from "@coinbase/cdp-hooks";
+import { AuthButton } from "@coinbase/cdp-react/components/AuthButton";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 // Styles to match Button component with variant="outline" and size="lg"
 const authButtonWrapperClass = `
@@ -36,12 +31,14 @@ const authButtonWrapperClass = `
   [&_button]:dark:border-input
   [&_button]:dark:bg-input/30
   [&_button]:dark:hover:bg-input/50
-`.replace(/\s+/g, " ").trim()
+`
+  .replace(/\s+/g, " ")
+  .trim();
 
 export default function Navbar() {
-  const { isSignedIn } = useIsSignedIn()
-  const { evmAddress } = useEvmAddress()
-  const { signOut } = useSignOut()
+  const { isSignedIn } = useIsSignedIn();
+  const { evmAddress } = useEvmAddress();
+  const { signOut } = useSignOut();
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 w-full">
@@ -73,6 +70,5 @@ export default function Navbar() {
         )}
       </div>
     </nav>
-  )
+  );
 }
-

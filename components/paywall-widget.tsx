@@ -160,13 +160,16 @@ export const PaywallWidget = ({
 
       const proxyUrl = `/api/proxy?url=${encodeURIComponent(resource.resource)}`;
       const headers: HeadersInit = {};
-      
+
       // Add user wallet address header if available
       if (evmAddress) {
         headers["x-user-wallet-address"] = evmAddress;
-        console.log("[PaywallWidget] Adding user wallet address header:", evmAddress);
+        console.log(
+          "[PaywallWidget] Adding user wallet address header:",
+          evmAddress,
+        );
       }
-      
+
       const response = await fetchWithPayment(proxyUrl, {
         method: "GET",
         headers,

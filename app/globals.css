@@ -124,76 +124,15 @@
   }
 }
 
-/* Ensure CDP embedded wallet modal appears above hero text */
-/* Use highest specificity and target all possible modal containers */
-
-/* Target Radix UI portals (CDP uses Radix UI for modals) */
-body > div[data-radix-portal],
-body > div[data-radix-portal] > div,
-[data-radix-portal],
-[data-radix-portal] > div,
-[data-radix-portal] > div > div {
-  z-index: 99999 !important;
-}
-
-/* Target CDP-specific attributes */
-[data-cdp-portal],
-[data-cdp-modal],
-[data-cdp-overlay],
-[class*="cdp"],
-[class*="CDP"] {
-  z-index: 99999 !important;
-}
-
-/* Target dialog elements */
-div[role="dialog"],
-div[aria-modal="true"],
-[role="dialog"],
-[aria-modal="true"] {
-  z-index: 99999 !important;
-}
-
-/* Target fixed position overlays - most aggressive selector */
-body > div[style*="position: fixed"],
-body > div[style*="position:fixed"],
-body > div[style*="inset"],
-body > div[style*="z-index"] {
-  z-index: 99999 !important;
-}
-
-/* Target any element with fixed positioning and inset */
-[style*="position: fixed"],
-[style*="position:fixed"] {
-  z-index: 99999 !important;
-}
-
-/* Ensure overlay backgrounds are below modal content but above page */
-[style*="inset: 0"],
-[style*="inset:0"],
-[style*="inset:0px"] {
-  z-index: 99998 !important;
-  @layer utilities {
-    .dotted-underline {
-      border-bottom: 1px dotted currentColor;
-      padding-bottom: 1px;
-    }
-
-    .dotted-underline-network {
-      border-bottom: 1px dotted currentColor;
-      padding-bottom: 1px;
-    }
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
   }
-
-  @keyframes shimmer {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
+  100% {
+    background-position: -200% 0;
   }
+}
 
-  .animate-shimmer {
-    animation: shimmer 3s linear infinite;
-  }
+.animate-shimmer {
+  animation: shimmer 3s linear infinite;
 }

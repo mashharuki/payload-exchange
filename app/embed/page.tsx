@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { FundFaucet } from "@/components/fund-faucet";
 import { SendTransaction } from "@/components/send-transaction";
 import { WalletAuth } from "@/components/wallet-auth";
@@ -24,8 +24,7 @@ export default function Home() {
   const isChatGptApp = useIsChatGptApp();
 
   const name = useMemo(
-    () =>
-      toolOutput?.result?.structuredContent?.name || toolOutput?.name,
+    () => toolOutput?.result?.structuredContent?.name || toolOutput?.name,
     [toolOutput],
   );
 
