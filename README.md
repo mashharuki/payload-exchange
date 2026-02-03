@@ -425,3 +425,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ---
 
 Built for [ETHGlobal Buenos Aires](https://ethglobal.com/events/buenosaires) 🚀
+
+## 参考文献
+- [Deepwiki payload-exchange](https://deepwiki.com/mashharuki/payload-exchange)
