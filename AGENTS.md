@@ -1,111 +1,153 @@
-# Claude Code AI駆動開発 共通ガイドライン
+# AI-DLC and Spec-Driven Development
 
-## 全体的な方針
-- 特段の指定がない限り、わかりやすくて自然な日本語で回答を出力してください
-- 複雑な処理の場合は、ステップバイステップで進めてください。
-- プロジェクトを毎回アクティベートしてください
-- プロジェクトがオンボーディングされていない場合はオンボーディングしてください
+Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life Cycle)
 
-## 開発の基本理念
-- 動くコードを書くだけでなく、品質・保守性・安全性を常に意識する
-- プロジェクトの段階（プロトタイプ、MVP、本番環境）に応じて適切なバランスを取る
-- 問題を見つけたら放置せず、必ず対処または明示的に記録する
-- ボーイスカウトルール：コードを見つけた時よりも良い状態で残す
+## Project Context
 
-## エラーハンドリングの原則
-- 関連が薄く見えるエラーでも必ず解決する
-- エラーの抑制（@ts-ignore、try-catch で握りつぶす等）ではなく、根本原因を修正
-- 早期にエラーを検出し、明確なエラーメッセージを提供
-- エラーケースも必ずテストでカバーする
-- 外部APIやネットワーク通信は必ず失敗する可能性を考慮
+### Paths
+- Steering: `.kiro/steering/`
+- Specs: `.kiro/specs/`
 
-## コード品質の基準
-- DRY原則：重複を避け、単一の信頼できる情報源を維持
-- 意味のある変数名・関数名で意図を明確に伝える
-- プロジェクト全体で一貫したコーディングスタイルを維持
-- 小さな問題も放置せず、発見次第修正（Broken Windows理論）
-- コメントは「なぜ」を説明し、「何を」はコードで表現
+### Steering vs Specification
 
-## テスト規律
-- テストをスキップせず、問題があれば修正する
-- 実装詳細ではなく振る舞いをテスト
-- テスト間の依存を避け、任意の順序で実行可能に
-- テストは高速で、常に同じ結果を返すように
-- カバレッジは指標であり、質の高いテストを重視
+**Steering** (`.kiro/steering/`) - Guide AI with project-wide rules and context
+**Specs** (`.kiro/specs/`) - Formalize development process for individual features
 
-## 保守性とリファクタリング
-- 機能追加と同時に既存コードの改善を検討
-- 大規模な変更は小さなステップに分割
-- 使用されていないコードは積極的に削除
-- 依存関係は定期的に更新（セキュリティと互換性のため）
-- 技術的負債は明示的にコメントやドキュメントに記録
+### Active Specifications
+- Check `.kiro/specs/` for active specifications
+- Use `/kiro:spec-status [feature-name]` to check progress
 
-## セキュリティの考え方
-- APIキー、パスワード等は環境変数で管理（ハードコード禁止）
-- すべての外部入力を検証
-- 必要最小限の権限で動作（最小権限の原則）
-- 不要な依存関係を避ける
-- セキュリティ監査ツールを定期的に実行
+## Development Guidelines
+- Think in English, generate responses in Japanese. All Markdown content written to project files (e.g., requirements.md, design.md, tasks.md, research.md, validation reports) MUST be written in the target language configured for this specification (see spec.json.language).
+- For complex processes, proceed step by step.
+- Check if the project is activated.
+- If not activated, activate it.
+- If not onboarded, complete onboarding.
 
-## パフォーマンスの意識
-- 推測ではなく計測に基づいて最適化
-- 初期段階から拡張性を考慮
-- 必要になるまでリソースの読み込みを遅延
-- キャッシュの有効期限と無効化戦略を明確に
-- N+1問題やオーバーフェッチを避ける
+## Minimal Workflow
+- Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`
+- Phase 1 (Specification):
+  - `/kiro:spec-init "description"`
+  - `/kiro:spec-requirements {feature}`
+  - `/kiro:validate-gap {feature}` (optional: for existing codebase)
+  - `/kiro:spec-design {feature} [-y]`
+  - `/kiro:validate-design {feature}` (optional: design review)
+  - `/kiro:spec-tasks {feature} [-y]`
+- Phase 2 (Implementation): `/kiro:spec-impl {feature} [tasks]`
+  - `/kiro:validate-impl {feature}` (optional: after implementation)
+- Progress check: `/kiro:spec-status {feature}` (use anytime)
 
-## 信頼性の確保
-- タイムアウト処理を適切に設定
-- リトライ機構の実装（指数バックオフを考慮）
-- サーキットブレーカーパターンの活用
-- 一時的な障害に対する耐性を持たせる
-- 適切なログとメトリクスで可観測性を確保
+## Development Rules
+- 3-phase approval workflow: Requirements → Design → Tasks → Implementation
+- Human review required each phase; use `-y` only for intentional fast-track
+- Keep steering current and verify alignment with `/kiro:spec-status`
+- Follow the user's instructions precisely, and within that scope act autonomously: gather the necessary context and complete the requested work end-to-end in this run, asking questions only when essential information is missing or the instructions are critically ambiguous.
 
-## プロジェクトコンテキストの理解
-- ビジネス要件と技術要件のバランスを取る
-- 現在のフェーズで本当に必要な品質レベルを判断
-- 時間制約がある場合でも、最低限の品質基準を維持
-- チーム全体の技術レベルに合わせた実装選択
+## Steering Configuration
+- Load entire `.kiro/steering/` as project memory
+- Default files: `product.md`, `tech.md`, `structure.md`
+- Custom files are supported (managed via `/kiro:steering-custom`)
 
-## トレードオフの認識
-- すべてを完璧にすることは不可能（銀の弾丸は存在しない）
-- 制約の中で最適なバランスを見つける
-- プロトタイプなら簡潔さを、本番なら堅牢性を優先
-- 妥協点とその理由を明確にドキュメント化
+## Core Development Philosophy
+- Focus not only on writing working code but also on quality, maintainability, and security
+- Strike the right balance according to the project phase (prototype, MVP, production)
+- When you find a problem, don't leave it unaddressed; either fix it or explicitly document it
+- Boy Scout Rule: Leave the code better than you found it
 
-## Git運用の基本
-- コンベンショナルコミット形式を使用（feat:, fix:, docs:, test:, refactor:, chore:）
-- コミットは原子的で、単一の変更に焦点を当てる
-- 明確で説明的なコミットメッセージを英語で記述
-- main/masterブランチへの直接コミットは避ける
+## Error Handling Principles
+- Always resolve errors, even if they seem unrelated
+- Fix root causes instead of suppressing errors (@ts-ignore, silent try-catch, etc.)
+- Detect errors early and provide clear error messages
+- Cover error cases with tests
+- Always consider the possibility of failure for external APIs and network communications
 
-## コードレビューの姿勢
-- レビューコメントは建設的な改善提案として受け取る
-- 個人ではなくコードに焦点を当てる
-- 変更の理由と影響を明確に説明
-- フィードバックを学習機会として歓迎
+## Code Quality Standards
+- DRY principle: Avoid duplication and maintain a single source of truth
+- Use meaningful variable and function names to clearly convey intent
+- Maintain consistent coding style throughout the project
+- Don't leave small issues unaddressed; fix them as soon as you find them (Broken Windows Theory)
+- Comments should explain "why"; let the code express "what"
 
-## デバッグのベストプラクティス
-- 問題を確実に再現できる手順を確立
-- 二分探索で問題の範囲を絞り込む
-- 最近の変更から調査を開始
-- デバッガー、プロファイラー等の適切なツールを活用
-- 調査結果と解決策を記録し、知識を共有
+## Testing Discipline
+- Don't skip tests; fix them if there are issues
+- Test behavior, not implementation details
+- Avoid dependencies between tests; they should run in any order
+- Tests should be fast and always return the same results
+- Coverage is a metric; prioritize high-quality tests
 
-## 依存関係の管理
-- 本当に必要な依存関係のみを追加
-- package-lock.json等のロックファイルを必ずコミット
-- 新しい依存関係追加前にライセンス、サイズ、メンテナンス状況を確認
-- セキュリティパッチとバグ修正のため定期的に更新
+## Maintainability and Refactoring
+- Consider improving existing code when adding features
+- Break large changes into small steps
+- Actively delete unused code
+- Regularly update dependencies (for security and compatibility)
+- Explicitly document technical debt in comments or documentation
 
-## ドキュメントの基準
-- READMEにプロジェクトの概要、セットアップ、使用方法を明確に記載
-- ドキュメントをコードと同期して更新
-- 実例を示すことを優先
-- 重要な設計判断はADR (Architecture Decision Records)で記録
+## Security Approach
+- Manage API keys, passwords, etc. with environment variables (no hardcoding)
+- Validate all external input
+- Operate with minimum necessary privileges (principle of least privilege)
+- Avoid unnecessary dependencies
+- Run security audit tools regularly
 
-## 継続的な改善
-- 学んだことを次のプロジェクトに活かす
-- 定期的に振り返りを行い、プロセスを改善
-- 新しいツールや手法を適切に評価して取り入れる
-- チームや将来の開発者のために知識を文書化
+## Performance Awareness
+- Optimize based on measurement, not speculation
+- Consider scalability from the early stages
+- Delay loading resources until needed
+- Clearly define cache expiration and invalidation strategies
+- Avoid N+1 problems and over-fetching
+
+## Reliability Assurance
+- Set appropriate timeout handling
+- Implement retry mechanisms (consider exponential backoff)
+- Utilize circuit breaker patterns
+- Build tolerance for temporary failures
+- Ensure observability with appropriate logs and metrics
+
+## Understanding Project Context
+- Balance business requirements and technical requirements
+- Determine the truly necessary quality level for the current phase
+- Maintain minimum quality standards even under time constraints
+- Choose implementations that match the team's technical level
+
+## Recognizing Trade-offs
+- It's impossible to perfect everything (there is no silver bullet)
+- Find the optimal balance within constraints
+- Prioritize simplicity for prototypes, robustness for production
+- Clearly document compromise points and their reasons
+
+## Git Operations Basics
+- Use conventional commit format (feat:, fix:, docs:, test:, refactor:, chore:)
+- Commits should be atomic, focusing on a single change
+- Write clear and descriptive commit messages in English
+- Avoid direct commits to main/master branches
+
+## Code Review Attitude
+- Accept review comments as constructive improvement suggestions
+- Focus on code, not individuals
+- Clearly explain the reasons for and impact of changes
+- Welcome feedback as a learning opportunity
+
+## Debugging Best Practices
+- Establish steps to reliably reproduce the problem
+- Narrow down the problem scope with binary search
+- Start investigation from recent changes
+- Utilize appropriate tools like debuggers and profilers
+- Document findings and solutions to share knowledge
+
+## Dependency Management
+- Add only truly necessary dependencies
+- Always commit lock files like package-lock.json
+- Check license, size, and maintenance status before adding new dependencies
+- Regularly update for security patches and bug fixes
+
+## Documentation Standards
+- Clearly describe project overview, setup, and usage in README
+- Keep documentation synchronized with code updates
+- Prioritize showing examples
+- Record important design decisions in ADR (Architecture Decision Records)
+
+## Continuous Improvement
+- Apply lessons learned to the next project
+- Regularly conduct retrospectives and improve processes
+- Appropriately evaluate and adopt new tools and techniques
+- Document knowledge for the team and future developers
