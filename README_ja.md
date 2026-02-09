@@ -161,7 +161,7 @@ bun install
 # アプリURL（iframe描画に必須）
 TUNNEL_URL=http://localhost:3000
 
-# DB接続
+# DB接続(サーバー上でやるには事前にNeonでDBを作成する必要あり)
 DATABASE_URL=postgresql://user:password@localhost:5432/payload_exchange
 
 # CDP設定
