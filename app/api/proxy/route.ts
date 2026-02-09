@@ -1,15 +1,26 @@
+// ========================================
+// プロキシルートハンドラー
+// ========================================
+// このファイルは、x402リソースへのリクエストをインターセプトし、
+// Honoサーバーに委譲するプロキシ層を実装しています。
+// `/api/proxy?url=...` 形式のリクエストを `/api/payload/proxy/:resourceId` 形式に変換します。
+
+import { app } from "@/server/hono/app";
 import { handle } from "hono/vercel";
 import type { NextRequest } from "next/server";
-import { app } from "@/server/hono/app";
 
 export const runtime = "nodejs";
 
-// Delegate all proxy requests to Hono
-// Convert /api/proxy?url=... format to /api/payload/proxy/:resourceId format
+// ========================================
+// Honoへのリクエスト委譲関数
+// ========================================
+// Next.jsのリクエストをHonoサーバーに委譲します。
+// URLクエリパラメータ `url` を取得し、それをHonoのルートパラメータとしてエンコードします。
 async function delegateToHono(req: NextRequest) {
   const url = new URL(req.url);
-  const targetUrl = url.searchParams.get("url");
+  const targetUrl = url.searchParams.get("url"); // アクセスしたいx402リソースのURL
 
+  // URLパラメータが指定されていない場合はエラーを返す
   if (!targetUrl) {
     return new Response(
       JSON.stringify({ error: "Missing 'url' query parameter" }),
@@ -17,7 +28,7 @@ async function delegateToHono(req: NextRequest) {
         status: 400,
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": "*", // CORS対応
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "*",
         },
@@ -26,28 +37,34 @@ async function delegateToHono(req: NextRequest) {
   }
 
   try {
-    // Encode the full URL as the resourceId (Hono route supports full URLs)
+    // ========================================
+    // Honoルート用のURL構築
+    // ========================================
+    // フルURLをresourceIdとしてエンコード（Honoルートは完全なURLをサポート）
     const encodedResourceId = encodeURIComponent(targetUrl);
 
-    // Create a new request URL pointing to the Hono route
+    // Honoルートを指す新しいリクエストURLを作成
     const baseUrl = new URL(req.url);
     const honoPath = `/api/payload/proxy/${encodedResourceId}`;
     const honoUrl = new URL(honoPath, baseUrl.origin);
 
-    // Forward query parameters if any (excluding 'url')
+    // クエリパラメータを転送（`url`以外）
     url.searchParams.forEach((value, key) => {
       if (key !== "url") {
         honoUrl.searchParams.set(key, value);
       }
     });
 
-    // Create a new request for Hono with all original headers
+    // ========================================
+    // Hono用のリクエスト作成
+    // ========================================
+    // 元のリクエストのヘッダーをすべてコピー
     const headers = new Headers();
     req.headers.forEach((value, key) => {
       headers.set(key, value);
     });
 
-    // Create request body if present
+    // リクエストボディがある場合は含める（GET/HEAD以外）
     let body: ReadableStream | null = null;
     if (req.method !== "GET" && req.method !== "HEAD") {
       body = req.body;
@@ -59,7 +76,7 @@ async function delegateToHono(req: NextRequest) {
       body,
     });
 
-    // Handle with Hono
+    // Honoハンドラーでリクエストを処理
     return handle(app)(honoRequest);
   } catch (error) {
     console.error("[Proxy] Error delegating to Hono:", error);
@@ -79,13 +96,21 @@ async function delegateToHono(req: NextRequest) {
   }
 }
 
+// ========================================
+// HTTPメソッドハンドラー
+// ========================================
+// すべてのHTTPメソッド（GET, POST, PUT, DELETE, PATCH）をHonoに委譲します。
 export const GET = delegateToHono;
 export const POST = delegateToHono;
 export const PUT = delegateToHono;
 export const DELETE = delegateToHono;
 export const PATCH = delegateToHono;
 
-// Enable CORS for all origins, methods, and headers
+// ========================================
+// CORS対応: OPTIONSリクエスト
+// ========================================
+// すべてのオリジン、メソッド、ヘッダーに対してCORSを有効化します。
+// これにより、異なるドメインからのリクエストも受け付けることができます。
 export const OPTIONS = async () => {
   return new Response(null, {
     status: 200,

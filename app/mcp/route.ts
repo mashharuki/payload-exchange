@@ -1,39 +1,63 @@
-import { createMcpHandler } from "mcp-handler";
-import { z } from "zod/v3";
+// ========================================
+// MCP (Model Context Protocol) サーバー
+// ========================================
+// このファイルは、ChatGPTとPayload Exchangeを統合するためのMCPサーバーを実装しています。
+// MCPは、AIシステムと外部ツール・データソースを接続するための標準プロトコルです。
+
 import { APP_BASE_URL } from "@/lib/config";
 import {
-  getResource,
-  listResources,
-  searchResources,
+    getResource,
+    listResources,
+    searchResources,
 } from "@/server/core/resources/registry";
+import { createMcpHandler } from "mcp-handler";
+import { z } from "zod/v3";
 
+// ========================================
+// ヘルパー関数: HTMLウィジェットの取得
+// ========================================
+// ChatGPTのiframe内で表示するHTMLコンテンツを取得します。
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
   const result = await fetch(`${baseUrl}${path}`);
   return await result.text();
 };
 
+// ========================================
+// ウィジェット型定義
+// ========================================
+// ChatGPTに表示されるウィジェットの設定を定義します。
 type ContentWidget = {
-  id: string;
-  title: string;
-  templateUri: string;
-  invoking: string;
-  invoked: string;
-  html: string;
-  description: string;
-  widgetDomain: string;
+  id: string; // ウィジェットの一意識別子
+  title: string; // ウィジェットのタイトル
+  templateUri: string; // OpenAI側で参照するテンプレートURI
+  invoking: string; // ツール実行中に表示されるメッセージ
+  invoked: string; // ツール実行完了後に表示されるメッセージ
+  html: string; // ウィジェットのHTMLコンテンツ
+  description: string; // ウィジェットの説明
+  widgetDomain: string; // ウィジェットのドメイン
 };
 
+// ========================================
+// ウィジェットメタデータ生成関数
+// ========================================
+// OpenAI Apps SDKが必要とするメタデータを生成します。
 function widgetMeta(widget: ContentWidget) {
   return {
-    "openai/outputTemplate": widget.templateUri,
-    "openai/toolInvocation/invoking": widget.invoking,
-    "openai/toolInvocation/invoked": widget.invoked,
-    "openai/widgetAccessible": false,
-    "openai/resultCanProduceWidget": true,
+    "openai/outputTemplate": widget.templateUri, // ウィジェットのテンプレートURI
+    "openai/toolInvocation/invoking": widget.invoking, // 実行中メッセージ
+    "openai/toolInvocation/invoked": widget.invoked, // 完了メッセージ
+    "openai/widgetAccessible": false, // ウィジェットがアクセス可能かどうか
+    "openai/resultCanProduceWidget": true, // ツールの結果がウィジェットを生成できるか
   } as const;
 }
 
+// ========================================
+// MCPハンドラーの作成
+// ========================================
+// MCPサーバーのメインハンドラーを作成します。
+// このハンドラーは、ChatGPTからのリクエストを処理し、ツールやリソースを提供します。
 const handler = createMcpHandler(async (server) => {
+  // 各ウィジェットのHTMLコンテンツを事前に取得
   const embedHtml = await getAppsSdkCompatibleHtml(APP_BASE_URL, "/embed");
   const resourcesHtml = await getAppsSdkCompatibleHtml(
     APP_BASE_URL,
@@ -41,6 +65,10 @@ const handler = createMcpHandler(async (server) => {
   );
   const paywallHtml = await getAppsSdkCompatibleHtml(APP_BASE_URL, "/paywall");
 
+  // ========================================
+  // ウィジェット定義: メインアプリウィジェット
+  // ========================================
+  // Payload Exchangeのメインアプリケーションを表示するウィジェット
   const contentWidget: ContentWidget = {
     id: "open_app",
     title: "Open Payload.exchange App",
@@ -52,6 +80,10 @@ const handler = createMcpHandler(async (server) => {
     widgetDomain: "https://payload.exchange",
   };
 
+  // ========================================
+  // ウィジェット定義: リソースビューアーウィジェット
+  // ========================================
+  // x402保護されたリソースを一覧・検索・表示するウィジェット
   const resourceWidget: ContentWidget = {
     id: "resource_widget",
     title: "Resource Viewer",
@@ -63,6 +95,10 @@ const handler = createMcpHandler(async (server) => {
     widgetDomain: "https://payload.exchange",
   };
 
+  // ========================================
+  // ウィジェット定義: ペイウォールウィジェット
+  // ========================================
+  // リソースへのアクセスに必要な支払いオプション（直接支払い or アクション）を表示するウィジェット
   const paywallWidget: ContentWidget = {
     id: "paywall_widget",
     title: "Paywall",
@@ -74,16 +110,20 @@ const handler = createMcpHandler(async (server) => {
     widgetDomain: "https://payload.exchange",
   };
 
+  // ========================================
+  // リソース登録: メインアプリウィジェット
+  // ========================================
+  // MCPリソースとして登録することで、ChatGPTがこのウィジェットを表示できるようになります。
   server.registerResource(
     "content-widget",
     contentWidget.templateUri,
     {
       title: contentWidget.title,
       description: contentWidget.description,
-      mimeType: "text/html+skybridge",
+      mimeType: "text/html+skybridge", // Skybridgeは、OpenAIのiframe内でHTMLを表示するためのMIMEタイプ
       _meta: {
         "openai/widgetDescription": contentWidget.description,
-        "openai/widgetPrefersBorder": true,
+        "openai/widgetPrefersBorder": true, // ウィジェットに枠線を表示するか
       },
     },
     async (uri) => ({
@@ -173,6 +213,11 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
+  // ========================================
+  // ツール登録: メインアプリを開く
+  // ========================================
+  // ChatGPTから呼び出せるツールとして登録します。
+  // ユーザーが「Payload Exchangeを開いて」と言うと、このツールが実行されます。
   //@ts-ignore
   server.registerTool(
     contentWidget.id,
@@ -185,7 +230,7 @@ const handler = createMcpHandler(async (server) => {
           .string()
           .describe("The name of the user to display on the homepage"),
       },
-      _meta: widgetMeta(contentWidget),
+      _meta: widgetMeta(contentWidget), // ウィジェット表示のためのメタデータ
     },
     async ({ name }) => ({
       content: [
@@ -202,6 +247,10 @@ const handler = createMcpHandler(async (server) => {
     }),
   );
 
+  // ========================================
+  // ツール登録: URLからリソースを取得
+  // ========================================
+  // 指定されたURLのx402リソース情報を取得し、リソースビューアーウィジェットで表示します。
   server.registerTool(
     "get_resource_by_url",
     {
@@ -235,12 +284,18 @@ const handler = createMcpHandler(async (server) => {
         ],
         _meta: {
           ...widgetMeta(resourceWidget),
+          // URLパラメータを使ってウィジェットの表示モードを制御
           "openai/outputTemplate": `${resourceWidget.templateUri}?mode=view&url=${encodeURIComponent(url)}`,
         },
       };
     },
   );
 
+  // ========================================
+  // ツール登録: ペイウォールを表示
+  // ========================================
+  // x402リソースへのアクセスに必要な支払いオプションを表示します。
+  // ユーザーは直接支払い（USDC）またはアクション（メール登録など）を選択できます。
   server.registerTool(
     "show_paywall",
     {
@@ -284,12 +339,16 @@ const handler = createMcpHandler(async (server) => {
       };
     },
   );
+  // ========================================
+  // ツール登録: リソース一覧を表示
+  // ========================================
+  // 利用可能なx402リソースの一覧を取得し、リソースビューアーウィジェットで表示します。
   server.registerTool(
     "list_resources",
     {
       title: "List Resources",
       description: "List all available x402 resources",
-      inputSchema: {},
+      inputSchema: {}, // 入力パラメータなし
       _meta: widgetMeta(resourceWidget),
     },
     async () => {
@@ -309,6 +368,10 @@ const handler = createMcpHandler(async (server) => {
     },
   );
 
+  // ========================================
+  // ツール登録: リソースを検索
+  // ========================================
+  // クエリ文字列でx402リソースを検索し、リソースビューアーウィジェットで結果を表示します。
   server.registerTool(
     "search_resources",
     {
@@ -337,8 +400,12 @@ const handler = createMcpHandler(async (server) => {
   );
 });
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+// ========================================
+// Next.js Route Handler設定
+// ========================================
+export const runtime = "nodejs"; // Node.jsランタイムを使用
+export const dynamic = "force-dynamic"; // 動的レンダリングを強制（キャッシュを無効化）
 
+// GETとPOSTリクエストの両方をMCPハンドラーで処理
 export const GET = handler;
 export const POST = handler;
